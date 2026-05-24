@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sports Scoreboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    /* 7-segment display font for digits */
+    @font-face {
+      font-family: 'DSEG7';
+      src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2');
+      font-weight: bold;
+      font-display: swap;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --amber: #FFA800;
+      --red:   #FF2200;
+      --green: #00BB44;
+      --panel-border: 2px solid rgba(255,255,255,0.55);
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #060606;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .board {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      padding: 1.8vh 3.5vw;
+      gap: 1.2vh;
+    }
+
+    .clock-row {
+      display: flex;
+      justify-content: center;
+    }
+
+    .clock-box {
+      border: var(--panel-border);
+      background: #000;
+      padding: 0.8vh 5vw;
+    }
+
+    .clock-digits {
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(44px, 11vh, 128px);
+      color: var(--amber);
+      text-shadow: 0 0 10px rgba(255,168,0,0.45);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .labels-row {
+      display: flex;
+      align-items: center;
+      padding: 0 0.5vw;
+    }
+
+    .team-label {
+      flex: 1;
+      font-size: clamp(13px, 2.8vh, 26px);
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .per-label {
+      min-width: 9vw;
+      text-align: center;
+      font-size: clamp(10px, 2vh, 18px);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .scores-row {
+      display: flex;
+      gap: 1vw;
+      min-height: 0;
+    }
+
+    .score-panel {
+      flex: 1;
+      border: var(--panel-border);
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .score-panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,34,0,0.14);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .score-panel.scored::after { opacity: 1; }
+
+    .score-num {
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(64px, min(24vh, 16vw), 260px);
+      color: var(--red);
+      text-shadow: 0 0 10px rgba(255,34,0,0.42);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.09); }
+      100% { transform: scale(1); }
+    }
+    .score-num.pop { animation: pop 0.22s ease; }
+
+    .adj-row {
+      display: flex;
+      gap: 0.8vw;
+      margin-top: 1.2vh;
+    }
+
+    .adj-btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(9px, 1.4vh, 13px);
+      font-weight: 700;
+      background: #181818;
+      color: #777;
+      border: 1px solid #2e2e2e;
+      padding: 0.5vh 1.1vw;
+      cursor: pointer;
+      border-radius: 2px;
+      letter-spacing: 0.05em;
+    }
+    .adj-btn:active { background: #2e2e2e; color: #ccc; }
+
+    .period-panel {
+      border: var(--panel-border);
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: clamp(54px, 9vw, 120px);
+      padding: 0 1.5vw;
+    }
+
+    .period-num {
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(40px, min(12vh, 8vw), 120px);
+      color: var(--green);
+      text-shadow: 0 0 10px rgba(0,187,68,0.42);
+      line-height: 1;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.2vw;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-btn {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: clamp(9px, 1.6vh, 14px);
+      background: #0e0e0e;
+      color: #999;
+      border: 1.5px solid #2e2e2e;
+      padding: 0.9vh 2vw;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .ctrl-btn:active { background: #202020; }
+    .ctrl-btn.play { color: var(--amber); border-color: rgba(255,168,0,0.55); }
+
+    .banner {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.86);
+      align-items: center;
+      justify-content: center;
+      z-index: 600;
+    }
+    .banner.show { display: flex; }
+
+    .banner-box {
+      border: 2px solid var(--amber);
+      background: #040404;
+      padding: 4vh 6vw;
+      text-align: center;
+      max-width: 520px;
+      width: 88%;
+    }
+
+    .banner-box h2 {
+      font-size: clamp(18px, 4vh, 34px);
+      color: var(--amber);
+      letter-spacing: 0.25em;
+      margin-bottom: 1.8vh;
+    }
+
+    .banner-box p {
+      font-size: clamp(11px, 2vh, 17px);
+      color: #ccc;
+      margin-bottom: 3vh;
+      letter-spacing: 0.1em;
+      line-height: 1.7;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #080808;
+      border: 2px solid var(--amber);
+      padding: 3.5vh 4vw;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .modal h2 {
+      color: var(--amber);
+      font-size: clamp(13px, 1.8vh, 17px);
+      letter-spacing: 0.35em;
+      text-align: center;
+      margin-bottom: 3vh;
+    }
+
+    .field { margin-bottom: 1.8vh; }
+
+    .field label {
+      display: block;
+      font-size: clamp(9px, 1.1vh, 11px);
+      letter-spacing: 0.2em;
+      color: #666;
+      margin-bottom: 0.6vh;
+    }
+
+    .field input {
+      width: 100%;
+      background: #121212;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 1.1vh 1.2vw;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(13px, 1.8vh, 16px);
+      outline: none;
+    }
+    .field input:focus { border-color: rgba(255,168,0,0.6); }
+
+    .modal-btns {
+      display: flex;
+      gap: 1vw;
+      margin-top: 3vh;
+    }
+
+    .modal-btns button {
+      flex: 1;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(9px, 1.3vh, 12px);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 1.3vh;
+      cursor: pointer;
+      background: transparent;
+      border: 1.5px solid #2a2a2a;
+      color: #777;
+      text-transform: uppercase;
+    }
+    .modal-btns button.primary { border-color: rgba(255,168,0,0.65); color: var(--amber); }
+    .modal-btns button:active { background: rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+
+<div class="modal-overlay open" id="modalOverlay">
+  <div class="modal">
+    <h2>GAME SETUP</h2>
+    <div class="field">
+      <label>HOME TEAM NAME</label>
+      <input id="inp-home" type="text" value="HOME" maxlength="12" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>VISITOR TEAM NAME</label>
+      <input id="inp-visitor" type="text" value="VISITOR" maxlength="12" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>MINUTES PER PERIOD</label>
+      <input id="inp-minutes" type="number" value="10" min="1" max="99" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>NUMBER OF PERIODS</label>
+      <input id="inp-periods" type="number" value="4" min="1" max="10" inputmode="numeric">
+    </div>
+    <div class="modal-btns">
+      <button id="cancelBtn" onclick="closeModal()">CANCEL</button>
+      <button class="primary" onclick="applySettings()">START GAME</button>
+    </div>
+  </div>
+</div>
+
+<div class="banner" id="banner">
+  <div class="banner-box">
+    <h2 id="bannerTitle">END OF PERIOD</h2>
+    <p id="bannerMsg"></p>
+    <button class="ctrl-btn play" id="bannerBtn" onclick="dismissBanner()">CONTINUE</button>
+  </div>
+</div>
+
+<div class="board">
+  <div class="clock-row">
+    <div class="clock-box">
+      <div class="clock-digits" id="clock">10:00</div>
+    </div>
+  </div>
+
+  <div class="labels-row">
+    <div class="team-label" id="lbl-home">HOME</div>
+    <div class="per-label">PER</div>
+    <div class="team-label" id="lbl-visitor">VISITOR</div>
+  </div>
+
+  <div class="scores-row">
+    <div class="score-panel" id="panel-home" onclick="scoreTeam('home',1)">
+      <div class="score-num" id="num-home">0</div>
+      <div class="adj-row" onclick="event.stopPropagation()">
+        <button class="adj-btn" onclick="scoreTeam('home',2)">+2</button>
+        <button class="adj-btn" onclick="scoreTeam('home',3)">+3</button>
+        <button class="adj-btn" onclick="scoreTeam('home',-1)">-1</button>
+      </div>
+    </div>
+
+    <div class="period-panel">
+      <div class="period-num" id="num-period">1</div>
+    </div>
+
+    <div class="score-panel" id="panel-visitor" onclick="scoreTeam('visitor',1)">
+      <div class="score-num" id="num-visitor">0</div>
+      <div class="adj-row" onclick="event.stopPropagation()">
+        <button class="adj-btn" onclick="scoreTeam('visitor',2)">+2</button>
+        <button class="adj-btn" onclick="scoreTeam('visitor',3)">+3</button>
+        <button class="adj-btn" onclick="scoreTeam('visitor',-1)">-1</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <button class="ctrl-btn play" id="playBtn" onclick="toggleTimer()">PLAY</button>
+    <button class="ctrl-btn" onclick="resetPeriodTimer()">RESET</button>
+    <button class="ctrl-btn" onclick="nextPeriod()">NEXT PER</button>
+    <button class="ctrl-btn" onclick="openModal()">SETTINGS</button>
+  </div>
+</div>
+
+<script>
+  const state = {
+    homeScore: 0, visitorScore: 0,
+    period: 1, totalPeriods: 4,
+    totalMins: 10, timeLeft: 600,
+    running: false, gameOver: false,
+  };
+
+  let ticker = null;
+
+  const clockEl     = document.getElementById('clock');
+  const numHome     = document.getElementById('num-home');
+  const numVisitor  = document.getElementById('num-visitor');
+  const numPeriod   = document.getElementById('num-period');
+  const lblHome     = document.getElementById('lbl-home');
+  const lblVisitor  = document.getElementById('lbl-visitor');
+  const playBtn     = document.getElementById('playBtn');
+  const banner      = document.getElementById('banner');
+  const bannerTitle = document.getElementById('bannerTitle');
+  const bannerMsg   = document.getElementById('bannerMsg');
+  const bannerBtn   = document.getElementById('bannerBtn');
+  const cancelBtn   = document.getElementById('cancelBtn');
+  const modalOverlay = document.getElementById('modalOverlay');
+
+  cancelBtn.style.display = 'none';
+  render();
+
+  function render() {
+    const m = Math.floor(state.timeLeft / 60);
+    const s = state.timeLeft % 60;
+    clockEl.textContent    = `${pad(m)}:${pad(s)}`;
+    numHome.textContent    = state.homeScore;
+    numVisitor.textContent = state.visitorScore;
+    numPeriod.textContent  = state.period;
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function toggleTimer() {
+    if (state.gameOver) return;
+    state.running ? pause() : play();
+  }
+
+  function play() {
+    if (state.timeLeft <= 0) return;
+    state.running = true;
+    playBtn.textContent = 'PAUSE';
+    ticker = setInterval(() => {
+      state.timeLeft--;
+      render();
+      if (state.timeLeft <= 0) {
+        pause();
+        flashClock(() => showBanner(state.period >= state.totalPeriods));
+      }
+    }, 1000);
+  }
+
+  function pause() {
+    clearInterval(ticker); ticker = null;
+    state.running = false;
+    playBtn.textContent = 'PLAY';
+  }
+
+  function resetPeriodTimer() {
+    pause();
+    state.timeLeft = state.totalMins * 60;
+    render();
+  }
+
+  function flashClock(cb) {
+    let n = 0;
+    const id = setInterval(() => {
+      clockEl.style.visibility = (++n % 2 === 0) ? 'visible' : 'hidden';
+      if (n >= 8) { clearInterval(id); clockEl.style.visibility = 'visible'; cb && cb(); }
+    }, 280);
+  }
+
+  function nextPeriod() {
+    pause();
+    if (state.period < state.totalPeriods) {
+      state.period++;
+      state.timeLeft = state.totalMins * 60;
+      state.gameOver = false;
+      render();
+    } else {
+      showBanner(true);
+    }
+  }
+
+  function showBanner(isGameOver) {
+    state.gameOver = isGameOver;
+    const h = lblHome.textContent;
+    const v = lblVisitor.textContent;
+    if (isGameOver) {
+      bannerTitle.textContent = 'GAME OVER';
+      bannerMsg.innerHTML = `Final Score<br>${h}&nbsp;&nbsp;${state.homeScore}&nbsp;&mdash;&nbsp;${state.visitorScore}&nbsp;&nbsp;${v}`;
+      bannerBtn.textContent = 'NEW GAME';
+    } else {
+      bannerTitle.textContent = `END OF PERIOD ${state.period}`;
+      bannerMsg.innerHTML = `${h}&nbsp;&nbsp;${state.homeScore}&nbsp;&mdash;&nbsp;${state.visitorScore}&nbsp;&nbsp;${v}`;
+      bannerBtn.textContent = 'CONTINUE';
+    }
+    banner.classList.add('show');
+  }
+
+  function dismissBanner() {
+    banner.classList.remove('show');
+    if (state.gameOver) {
+      openModal();
+    } else {
+      state.period++;
+      state.timeLeft = state.totalMins * 60;
+      render();
+    }
+  }
+
+  function scoreTeam(team, pts) {
+    if (pts < 0) {
+      if (team === 'home') state.homeScore = Math.max(0, state.homeScore + pts);
+      else                 state.visitorScore = Math.max(0, state.visitorScore + pts);
+    } else {
+      if (team === 'home') state.homeScore += pts;
+      else                 state.visitorScore += pts;
+
+      const panel = document.getElementById(`panel-${team}`);
+      const num   = team === 'home' ? numHome : numVisitor;
+      panel.classList.add('scored');
+      num.classList.remove('pop');
+      void num.offsetWidth;
+      num.classList.add('pop');
+      setTimeout(() => { panel.classList.remove('scored'); num.classList.remove('pop'); }, 300);
+    }
+    render();
+  }
+
+  function openModal() {
+    pause();
+    const hasGame = state.homeScore > 0 || state.visitorScore > 0 || state.period > 1;
+    cancelBtn.style.display = hasGame ? '' : 'none';
+    document.getElementById('inp-home').value    = lblHome.textContent;
+    document.getElementById('inp-visitor').value = lblVisitor.textContent;
+    document.getElementById('inp-minutes').value = state.totalMins;
+    document.getElementById('inp-periods').value = state.totalPeriods;
+    modalOverlay.classList.add('open');
+  }
+
+  function closeModal() { modalOverlay.classList.remove('open'); }
+
+  function applySettings() {
+    const home    = document.getElementById('inp-home').value.trim()    || 'HOME';
+    const visitor = document.getElementById('inp-visitor').value.trim() || 'VISITOR';
+    const mins    = clamp(parseInt(document.getElementById('inp-minutes').value) || 10, 1, 99);
+    const periods = clamp(parseInt(document.getElementById('inp-periods').value) || 4,  1, 10);
+
+    lblHome.textContent    = home;
+    lblVisitor.textContent = visitor;
+    state.totalMins    = mins;
+    state.totalPeriods = periods;
+    state.homeScore    = 0;
+    state.visitorScore = 0;
+    state.period       = 1;
+    state.timeLeft     = mins * 60;
+    state.gameOver     = false;
+
+    render();
+    closeModal();
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+</script>
+</body>
+</html>
