@@ -6,7 +6,6 @@
   <title>Sports Scoreboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
   <style>
-    /* 7-segment display font for digits */
     @font-face {
       font-family: 'DSEG7';
       src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2');
@@ -20,12 +19,12 @@
       --amber: #FFA800;
       --red:   #FF2200;
       --green: #00BB44;
-      --panel-border: 2px solid rgba(255,255,255,0.55);
+      --border: 2px solid rgba(255,255,255,0.55);
     }
 
     html, body {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
       background: #060606;
       color: #fff;
@@ -34,31 +33,30 @@
       touch-action: manipulation;
     }
 
+    /* fills true visible viewport — dvh accounts for Safari's address bar */
     .board {
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       display: grid;
       grid-template-rows: auto auto 1fr auto;
-      padding: 1.8vh 3.5vw;
-      gap: 1.2vh;
+      padding: 1.2vh 3vw;
+      gap: 0.8vh;
     }
 
-    .clock-row {
-      display: flex;
-      justify-content: center;
-    }
+    .clock-row { display: flex; justify-content: center; }
 
     .clock-box {
-      border: var(--panel-border);
+      border: var(--border);
       background: #000;
-      padding: 0.8vh 5vw;
+      padding: 0.6vh 5vw;
     }
 
     .clock-digits {
       font-family: 'DSEG7', 'Courier New', monospace;
-      font-size: clamp(44px, 11vh, 128px);
+      font-size: clamp(38px, 9.5vh, 120px);
       color: var(--amber);
-      text-shadow: 0 0 10px rgba(255,168,0,0.45);
+      text-shadow: 0 0 10px rgba(255,168,0,0.4);
       line-height: 1;
       letter-spacing: 0.04em;
       font-variant-numeric: tabular-nums;
@@ -70,13 +68,30 @@
       padding: 0 0.5vw;
     }
 
-    .team-label {
+    .team-label-group {
       flex: 1;
-      font-size: clamp(13px, 2.8vh, 26px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8vw;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .team-logo {
+      height: clamp(20px, 3.8vh, 42px);
+      width: auto;
+      max-width: clamp(20px, 3.8vh, 42px);
+      object-fit: contain;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .team-label {
+      font-size: clamp(12px, 2.5vh, 24px);
       font-weight: 900;
-      letter-spacing: 0.25em;
+      letter-spacing: 0.2em;
       color: #fff;
-      text-align: center;
       text-transform: uppercase;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -86,7 +101,7 @@
     .per-label {
       min-width: 9vw;
       text-align: center;
-      font-size: clamp(10px, 2vh, 18px);
+      font-size: clamp(9px, 1.8vh, 16px);
       font-weight: 700;
       letter-spacing: 0.15em;
       color: #888;
@@ -101,7 +116,7 @@
 
     .score-panel {
       flex: 1;
-      border: var(--panel-border);
+      border: var(--border);
       background: #000;
       display: flex;
       flex-direction: column;
@@ -117,7 +132,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(255,34,0,0.14);
+      background: rgba(255,34,0,0.13);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s;
@@ -126,9 +141,9 @@
 
     .score-num {
       font-family: 'DSEG7', 'Courier New', monospace;
-      font-size: clamp(64px, min(24vh, 16vw), 260px);
+      font-size: clamp(56px, min(22vh, 15vw), 240px);
       color: var(--red);
-      text-shadow: 0 0 10px rgba(255,34,0,0.42);
+      text-shadow: 0 0 10px rgba(255,34,0,0.4);
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
@@ -143,17 +158,17 @@
     .adj-row {
       display: flex;
       gap: 0.8vw;
-      margin-top: 1.2vh;
+      margin-top: 1vh;
     }
 
     .adj-btn {
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(9px, 1.4vh, 13px);
+      font-size: clamp(8px, 1.3vh, 13px);
       font-weight: 700;
       background: #181818;
       color: #777;
       border: 1px solid #2e2e2e;
-      padding: 0.5vh 1.1vw;
+      padding: 0.5vh 1vw;
       cursor: pointer;
       border-radius: 2px;
       letter-spacing: 0.05em;
@@ -161,20 +176,20 @@
     .adj-btn:active { background: #2e2e2e; color: #ccc; }
 
     .period-panel {
-      border: var(--panel-border);
+      border: var(--border);
       background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: clamp(54px, 9vw, 120px);
+      min-width: clamp(48px, 8vw, 110px);
       padding: 0 1.5vw;
     }
 
     .period-num {
       font-family: 'DSEG7', 'Courier New', monospace;
-      font-size: clamp(40px, min(12vh, 8vw), 120px);
+      font-size: clamp(34px, min(11vh, 7vw), 110px);
       color: var(--green);
-      text-shadow: 0 0 10px rgba(0,187,68,0.42);
+      text-shadow: 0 0 10px rgba(0,187,68,0.4);
       line-height: 1;
     }
 
@@ -189,17 +204,17 @@
     .ctrl-btn {
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
-      font-size: clamp(9px, 1.6vh, 14px);
+      font-size: clamp(8px, 1.5vh, 13px);
       background: #0e0e0e;
       color: #999;
       border: 1.5px solid #2e2e2e;
-      padding: 0.9vh 2vw;
+      padding: 0.8vh 2vw;
       cursor: pointer;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
     .ctrl-btn:active { background: #202020; }
-    .ctrl-btn.play { color: var(--amber); border-color: rgba(255,168,0,0.55); }
+    .ctrl-btn.play { color: var(--amber); border-color: rgba(255,168,0,0.5); }
 
     .banner {
       display: none;
@@ -222,16 +237,16 @@
     }
 
     .banner-box h2 {
-      font-size: clamp(18px, 4vh, 34px);
+      font-size: clamp(16px, 3.5vh, 30px);
       color: var(--amber);
       letter-spacing: 0.25em;
-      margin-bottom: 1.8vh;
+      margin-bottom: 1.5vh;
     }
 
     .banner-box p {
-      font-size: clamp(11px, 2vh, 17px);
+      font-size: clamp(10px, 1.8vh, 16px);
       color: #ccc;
-      margin-bottom: 3vh;
+      margin-bottom: 2.5vh;
       letter-spacing: 0.1em;
       line-height: 1.7;
     }
@@ -244,60 +259,112 @@
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      overflow-y: auto;
+      padding: 2vh 0;
     }
     .modal-overlay.open { display: flex; }
 
     .modal {
       background: #080808;
       border: 2px solid var(--amber);
-      padding: 3.5vh 4vw;
+      padding: 3vh 5vw;
       width: 90%;
-      max-width: 400px;
+      max-width: 420px;
+      flex-shrink: 0;
     }
 
     .modal h2 {
       color: var(--amber);
-      font-size: clamp(13px, 1.8vh, 17px);
+      font-size: clamp(12px, 1.7vh, 16px);
       letter-spacing: 0.35em;
       text-align: center;
-      margin-bottom: 3vh;
+      margin-bottom: 2.5vh;
     }
 
-    .field { margin-bottom: 1.8vh; }
+    .field { margin-bottom: 1.6vh; }
 
     .field label {
       display: block;
-      font-size: clamp(9px, 1.1vh, 11px);
+      font-size: clamp(8px, 1vh, 10px);
       letter-spacing: 0.2em;
       color: #666;
-      margin-bottom: 0.6vh;
+      margin-bottom: 0.5vh;
+      text-transform: uppercase;
     }
 
-    .field input {
+    .field input[type="text"],
+    .field input[type="number"] {
       width: 100%;
       background: #121212;
       border: 1px solid #333;
       color: #fff;
-      padding: 1.1vh 1.2vw;
+      padding: 1vh 2vw;
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(13px, 1.8vh, 16px);
+      font-size: clamp(12px, 1.6vh, 15px);
       outline: none;
     }
     .field input:focus { border-color: rgba(255,168,0,0.6); }
 
+    .logo-upload-row {
+      display: flex;
+      align-items: center;
+      gap: 1vw;
+    }
+
+    .logo-preview-sm {
+      width: clamp(32px, 5vh, 48px);
+      height: clamp(32px, 5vh, 48px);
+      object-fit: contain;
+      border: 1px solid #333;
+      border-radius: 3px;
+      background: #111;
+      flex-shrink: 0;
+    }
+
+    .upload-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(8px, 1.1vh, 11px);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      background: #181818;
+      color: #888;
+      border: 1px solid #333;
+      padding: 0.7vh 1.5vw;
+      cursor: pointer;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .upload-label:active { background: #2a2a2a; }
+    .upload-label input[type="file"] { display: none; }
+
+    .remove-btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(7px, 1vh, 10px);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      background: transparent;
+      color: #555;
+      border: 1px solid #2a2a2a;
+      padding: 0.7vh 1vw;
+      cursor: pointer;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .remove-btn:active { color: #999; }
+
     .modal-btns {
       display: flex;
-      gap: 1vw;
-      margin-top: 3vh;
+      gap: 1.5vw;
+      margin-top: 2.5vh;
     }
 
     .modal-btns button {
       flex: 1;
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(9px, 1.3vh, 12px);
+      font-size: clamp(8px, 1.2vh, 12px);
       font-weight: 700;
       letter-spacing: 0.15em;
-      padding: 1.3vh;
+      padding: 1.2vh;
       cursor: pointer;
       background: transparent;
       border: 1.5px solid #2a2a2a;
@@ -313,25 +380,51 @@
 <div class="modal-overlay open" id="modalOverlay">
   <div class="modal">
     <h2>GAME SETUP</h2>
+
     <div class="field">
-      <label>HOME TEAM NAME</label>
+      <label>Home Team Name</label>
       <input id="inp-home" type="text" value="HOME" maxlength="12" autocomplete="off" spellcheck="false">
     </div>
     <div class="field">
-      <label>VISITOR TEAM NAME</label>
+      <label>Home Team Logo (optional)</label>
+      <div class="logo-upload-row">
+        <img id="preview-home" class="logo-preview-sm" style="display:none">
+        <label class="upload-label">
+          Choose Photo
+          <input type="file" id="inp-logo-home" accept="image/*" onchange="handleLogo('home',this)">
+        </label>
+        <button class="remove-btn" type="button" onclick="clearLogo('home')">Remove</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Visitor Team Name</label>
       <input id="inp-visitor" type="text" value="VISITOR" maxlength="12" autocomplete="off" spellcheck="false">
     </div>
     <div class="field">
-      <label>MINUTES PER PERIOD</label>
+      <label>Visitor Team Logo (optional)</label>
+      <div class="logo-upload-row">
+        <img id="preview-visitor" class="logo-preview-sm" style="display:none">
+        <label class="upload-label">
+          Choose Photo
+          <input type="file" id="inp-logo-visitor" accept="image/*" onchange="handleLogo('visitor',this)">
+        </label>
+        <button class="remove-btn" type="button" onclick="clearLogo('visitor')">Remove</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Minutes Per Period</label>
       <input id="inp-minutes" type="number" value="10" min="1" max="99" inputmode="numeric">
     </div>
     <div class="field">
-      <label>NUMBER OF PERIODS</label>
+      <label>Number of Periods</label>
       <input id="inp-periods" type="number" value="4" min="1" max="10" inputmode="numeric">
     </div>
+
     <div class="modal-btns">
-      <button id="cancelBtn" onclick="closeModal()">CANCEL</button>
-      <button class="primary" onclick="applySettings()">START GAME</button>
+      <button id="cancelBtn" onclick="closeModal()">Cancel</button>
+      <button class="primary" onclick="applySettings()">Start Game</button>
     </div>
   </div>
 </div>
@@ -352,9 +445,15 @@
   </div>
 
   <div class="labels-row">
-    <div class="team-label" id="lbl-home">HOME</div>
+    <div class="team-label-group">
+      <img class="team-logo" id="logo-home" style="display:none">
+      <span class="team-label" id="lbl-home">HOME</span>
+    </div>
     <div class="per-label">PER</div>
-    <div class="team-label" id="lbl-visitor">VISITOR</div>
+    <div class="team-label-group">
+      <span class="team-label" id="lbl-visitor">VISITOR</span>
+      <img class="team-logo" id="logo-visitor" style="display:none">
+    </div>
   </div>
 
   <div class="scores-row">
@@ -395,22 +494,23 @@
     period: 1, totalPeriods: 4,
     totalMins: 10, timeLeft: 600,
     running: false, gameOver: false,
+    homeLogo: null, visitorLogo: null,
   };
 
   let ticker = null;
 
-  const clockEl     = document.getElementById('clock');
-  const numHome     = document.getElementById('num-home');
-  const numVisitor  = document.getElementById('num-visitor');
-  const numPeriod   = document.getElementById('num-period');
-  const lblHome     = document.getElementById('lbl-home');
-  const lblVisitor  = document.getElementById('lbl-visitor');
-  const playBtn     = document.getElementById('playBtn');
-  const banner      = document.getElementById('banner');
-  const bannerTitle = document.getElementById('bannerTitle');
-  const bannerMsg   = document.getElementById('bannerMsg');
-  const bannerBtn   = document.getElementById('bannerBtn');
-  const cancelBtn   = document.getElementById('cancelBtn');
+  const clockEl      = document.getElementById('clock');
+  const numHome      = document.getElementById('num-home');
+  const numVisitor   = document.getElementById('num-visitor');
+  const numPeriod    = document.getElementById('num-period');
+  const lblHome      = document.getElementById('lbl-home');
+  const lblVisitor   = document.getElementById('lbl-visitor');
+  const playBtn      = document.getElementById('playBtn');
+  const banner       = document.getElementById('banner');
+  const bannerTitle  = document.getElementById('bannerTitle');
+  const bannerMsg    = document.getElementById('bannerMsg');
+  const bannerBtn    = document.getElementById('bannerBtn');
+  const cancelBtn    = document.getElementById('cancelBtn');
   const modalOverlay = document.getElementById('modalOverlay');
 
   cancelBtn.style.display = 'none';
@@ -524,6 +624,40 @@
     render();
   }
 
+  function handleLogo(team, input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target.result;
+      const preview = document.getElementById(`preview-${team}`);
+      preview.src = src;
+      preview.style.display = '';
+      if (team === 'home') state.homeLogo = src;
+      else                 state.visitorLogo = src;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  function clearLogo(team) {
+    if (team === 'home') {
+      state.homeLogo = null;
+      document.getElementById('preview-home').style.display = 'none';
+      document.getElementById('inp-logo-home').value = '';
+    } else {
+      state.visitorLogo = null;
+      document.getElementById('preview-visitor').style.display = 'none';
+      document.getElementById('inp-logo-visitor').value = '';
+    }
+    applyLogoToBoard(team);
+  }
+
+  function applyLogoToBoard(team) {
+    const el  = document.getElementById(`logo-${team}`);
+    const src = team === 'home' ? state.homeLogo : state.visitorLogo;
+    if (src) { el.src = src; el.style.display = ''; }
+    else     { el.style.display = 'none'; }
+  }
+
   function openModal() {
     pause();
     const hasGame = state.homeScore > 0 || state.visitorScore > 0 || state.period > 1;
@@ -532,6 +666,12 @@
     document.getElementById('inp-visitor').value = lblVisitor.textContent;
     document.getElementById('inp-minutes').value = state.totalMins;
     document.getElementById('inp-periods').value = state.totalPeriods;
+    ['home','visitor'].forEach(t => {
+      const src = t === 'home' ? state.homeLogo : state.visitorLogo;
+      const el  = document.getElementById(`preview-${t}`);
+      if (src) { el.src = src; el.style.display = ''; }
+      else     { el.style.display = 'none'; }
+    });
     modalOverlay.classList.add('open');
   }
 
@@ -553,6 +693,8 @@
     state.timeLeft     = mins * 60;
     state.gameOver     = false;
 
+    applyLogoToBoard('home');
+    applyLogoToBoard('visitor');
     render();
     closeModal();
   }
