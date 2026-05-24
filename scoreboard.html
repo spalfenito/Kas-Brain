@@ -3,347 +3,334 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Kids Sports Scoreboard</title>
+  <title>Sports Scoreboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
   <style>
+    /* 7-segment display font for digits */
+    @font-face {
+      font-family: 'DSEG7';
+      src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2');
+      font-weight: bold;
+      font-display: swap;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --yellow: #FFD700;
-      --red:    #FF2222;
-      --green:  #00FF55;
-      --white:  #FFFFFF;
-      --border: 3px solid #fff;
+      --amber: #FFA800;
+      --red:   #FF2200;
+      --green: #00BB44;
+      --panel-border: 2px solid rgba(255,255,255,0.55);
     }
 
     html, body {
-      width: 100%; height: 100%;
-      background: #000;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #060606;
       color: #fff;
-      font-family: 'Orbitron', 'Courier New', monospace;
+      font-family: 'Orbitron', sans-serif;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 12px;
-    }
-
-    /* ── Scoreboard container ── */
+    /* ═══════════════════════════════════
+       BOARD — full-viewport grid
+    ═══════════════════════════════════ */
     .board {
-      width: 100%;
-      max-width: 860px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      padding: 1.8vh 3.5vw;
+      gap: 1.2vh;
     }
 
-    /* ── Clock ── */
+    /* ── Clock ─────────────────────────── */
     .clock-row {
       display: flex;
       justify-content: center;
     }
 
     .clock-box {
-      border: var(--border);
+      border: var(--panel-border);
       background: #000;
-      padding: 10px 36px;
+      padding: 0.8vh 5vw;
     }
 
     .clock-digits {
-      font-size: clamp(56px, 14vw, 118px);
-      font-weight: 900;
-      color: var(--yellow);
-      text-shadow:
-        0 0 8px var(--yellow),
-        0 0 24px var(--yellow),
-        0 0 48px rgba(255,215,0,.4);
-      letter-spacing: 10px;
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(44px, 11vh, 128px);
+      color: var(--amber);
+      text-shadow: 0 0 10px rgba(255,168,0,0.45);
       line-height: 1;
+      letter-spacing: 0.04em;
       font-variant-numeric: tabular-nums;
     }
 
-    /* ── Team labels ── */
+    /* ── Team labels ───────────────────── */
     .labels-row {
       display: flex;
       align-items: center;
-      padding: 0 6px;
+      padding: 0 0.5vw;
     }
 
     .team-label {
       flex: 1;
-      font-size: clamp(13px, 3.2vw, 22px);
-      font-weight: 700;
-      color: var(--white);
+      font-size: clamp(13px, 2.8vh, 26px);
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      color: #fff;
       text-align: center;
-      letter-spacing: 2px;
+      text-transform: uppercase;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .per-label {
-      font-size: clamp(11px, 2.5vw, 17px);
-      font-weight: 700;
-      color: var(--white);
-      letter-spacing: 1px;
-      min-width: 72px;
+      min-width: 9vw;
       text-align: center;
+      font-size: clamp(10px, 2vh, 18px);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #888;
+      text-transform: uppercase;
     }
 
-    /* ── Score row ── */
+    /* ── Score row ─────────────────────── */
     .scores-row {
       display: flex;
-      gap: 8px;
-      align-items: stretch;
+      gap: 1vw;
+      min-height: 0; /* allow flex children to shrink in grid */
     }
 
-    /* Tap the whole panel to score +1 */
+    /* Tap the whole panel → +1 */
     .score-panel {
       flex: 1;
-      border: var(--border);
+      border: var(--panel-border);
+      background: #000;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 14px 8px;
       cursor: pointer;
-      min-height: clamp(130px, 26vw, 210px);
       position: relative;
       overflow: hidden;
+      user-select: none;
     }
 
+    /* Flash overlay on score */
     .score-panel::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(255, 34, 34, .22);
+      background: rgba(255,34,0,0.14);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .15s;
+      transition: opacity 0.15s;
     }
-
     .score-panel.scored::after { opacity: 1; }
 
     .score-num {
-      font-size: clamp(68px, 17vw, 148px);
-      font-weight: 900;
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(64px, min(24vh, 16vw), 260px);
       color: var(--red);
-      text-shadow:
-        0 0 10px var(--red),
-        0 0 28px var(--red),
-        0 0 56px rgba(255,34,34,.4);
+      text-shadow: 0 0 10px rgba(255,34,0,0.42);
       line-height: 1;
       font-variant-numeric: tabular-nums;
-      transition: transform .15s;
     }
 
     @keyframes pop {
       0%   { transform: scale(1); }
-      40%  { transform: scale(1.18); }
+      40%  { transform: scale(1.09); }
       100% { transform: scale(1); }
     }
+    .score-num.pop { animation: pop 0.22s ease; }
 
-    .score-num.pop { animation: pop .22s ease; }
-
-    /* +2 +3 -1 buttons inside panel */
+    /* +2 +3 -1 row */
     .adj-row {
       display: flex;
-      gap: 6px;
-      margin-top: 10px;
+      gap: 0.8vw;
+      margin-top: 1.2vh;
     }
 
     .adj-btn {
-      font-family: 'Orbitron', monospace;
-      font-size: clamp(10px, 2.2vw, 13px);
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(9px, 1.4vh, 13px);
       font-weight: 700;
-      background: #1c1c1c;
-      color: #bbb;
-      border: 1px solid #484848;
-      padding: 5px 12px;
+      background: #181818;
+      color: #777;
+      border: 1px solid #2e2e2e;
+      padding: 0.5vh 1.1vw;
       cursor: pointer;
       border-radius: 2px;
+      letter-spacing: 0.05em;
     }
+    .adj-btn:active { background: #2e2e2e; color: #ccc; }
 
-    .adj-btn:active { background: #3a3a3a; color: #fff; }
-
-    /* Period panel */
+    /* Period box */
     .period-panel {
-      border: var(--border);
+      border: var(--panel-border);
+      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 12px;
-      min-width: 72px;
+      min-width: clamp(54px, 9vw, 120px);
+      padding: 0 1.5vw;
     }
 
     .period-num {
-      font-size: clamp(38px, 9vw, 78px);
-      font-weight: 900;
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(40px, min(12vh, 8vw), 120px);
       color: var(--green);
-      text-shadow:
-        0 0 10px var(--green),
-        0 0 28px var(--green);
+      text-shadow: 0 0 10px rgba(0,187,68,0.42);
       line-height: 1;
-      font-variant-numeric: tabular-nums;
     }
 
-    /* ── Control bar ── */
+    /* ── Controls ──────────────────────── */
     .controls-row {
       display: flex;
       justify-content: center;
+      align-items: center;
+      gap: 1.2vw;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 4px;
     }
 
     .ctrl-btn {
-      font-family: 'Orbitron', monospace;
+      font-family: 'Orbitron', sans-serif;
       font-weight: 700;
-      font-size: clamp(10px, 2.4vw, 13px);
-      background: #111;
-      color: #ccc;
-      border: 2px solid #484848;
-      padding: 9px 18px;
+      font-size: clamp(9px, 1.6vh, 14px);
+      background: #0e0e0e;
+      color: #999;
+      border: 1.5px solid #2e2e2e;
+      padding: 0.9vh 2vw;
       cursor: pointer;
-      letter-spacing: 1px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
+    .ctrl-btn:active { background: #202020; }
+    .ctrl-btn.play { color: var(--amber); border-color: rgba(255,168,0,0.55); }
 
-    .ctrl-btn:active { background: #2a2a2a; }
-
-    .ctrl-btn.play {
-      color: var(--yellow);
-      border-color: var(--yellow);
-    }
-
-    /* ── Period-end / Game-over banner ── */
+    /* ═══════════════════════════════════
+       PERIOD-END / GAME-OVER BANNER
+    ═══════════════════════════════════ */
     .banner {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.88);
+      background: rgba(0,0,0,0.86);
       align-items: center;
       justify-content: center;
       z-index: 600;
     }
-
     .banner.show { display: flex; }
 
     .banner-box {
-      border: 3px solid var(--yellow);
-      background: #050505;
-      padding: 36px 48px;
+      border: 2px solid var(--amber);
+      background: #040404;
+      padding: 4vh 6vw;
       text-align: center;
-      max-width: 420px;
-      width: 90%;
+      max-width: 520px;
+      width: 88%;
     }
 
     .banner-box h2 {
-      font-size: clamp(20px, 5vw, 30px);
-      color: var(--yellow);
-      letter-spacing: 3px;
-      margin-bottom: 14px;
+      font-size: clamp(18px, 4vh, 34px);
+      color: var(--amber);
+      letter-spacing: 0.25em;
+      margin-bottom: 1.8vh;
     }
 
     .banner-box p {
-      font-size: clamp(12px, 2.8vw, 15px);
-      color: #ddd;
-      margin-bottom: 24px;
-      letter-spacing: 1px;
-      line-height: 1.6;
+      font-size: clamp(11px, 2vh, 17px);
+      color: #ccc;
+      margin-bottom: 3vh;
+      letter-spacing: 0.1em;
+      line-height: 1.7;
     }
 
-    /* ── Settings modal ── */
+    /* ═══════════════════════════════════
+       SETTINGS MODAL
+    ═══════════════════════════════════ */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.92);
+      background: rgba(0,0,0,0.92);
       align-items: center;
       justify-content: center;
       z-index: 1000;
     }
-
     .modal-overlay.open { display: flex; }
 
     .modal {
       background: #080808;
-      border: 2px solid var(--yellow);
-      padding: 28px 28px 24px;
+      border: 2px solid var(--amber);
+      padding: 3.5vh 4vw;
       width: 90%;
       max-width: 400px;
     }
 
     .modal h2 {
-      color: var(--yellow);
-      font-size: 16px;
-      letter-spacing: 4px;
+      color: var(--amber);
+      font-size: clamp(13px, 1.8vh, 17px);
+      letter-spacing: 0.35em;
       text-align: center;
-      margin-bottom: 22px;
+      margin-bottom: 3vh;
     }
 
-    .field { margin-bottom: 14px; }
+    .field { margin-bottom: 1.8vh; }
 
     .field label {
       display: block;
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: #888;
-      margin-bottom: 5px;
+      font-size: clamp(9px, 1.1vh, 11px);
+      letter-spacing: 0.2em;
+      color: #666;
+      margin-bottom: 0.6vh;
     }
 
     .field input {
       width: 100%;
-      background: #161616;
-      border: 1px solid #444;
+      background: #121212;
+      border: 1px solid #333;
       color: #fff;
-      padding: 10px 12px;
-      font-family: 'Orbitron', monospace;
-      font-size: 15px;
+      padding: 1.1vh 1.2vw;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(13px, 1.8vh, 16px);
       outline: none;
     }
-
-    .field input:focus { border-color: var(--yellow); }
+    .field input:focus { border-color: rgba(255,168,0,0.6); }
 
     .modal-btns {
       display: flex;
-      gap: 10px;
-      margin-top: 22px;
+      gap: 1vw;
+      margin-top: 3vh;
     }
 
     .modal-btns button {
       flex: 1;
-      font-family: 'Orbitron', monospace;
-      font-size: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(9px, 1.3vh, 12px);
       font-weight: 700;
-      letter-spacing: 2px;
-      padding: 12px 8px;
+      letter-spacing: 0.15em;
+      padding: 1.3vh;
       cursor: pointer;
       background: transparent;
-      border: 2px solid #484848;
-      color: #aaa;
+      border: 1.5px solid #2a2a2a;
+      color: #777;
+      text-transform: uppercase;
     }
-
-    .modal-btns button.primary {
-      border-color: var(--yellow);
-      color: var(--yellow);
-    }
-
-    .modal-btns button:active { background: rgba(255,255,255,.06); }
+    .modal-btns button.primary { border-color: rgba(255,168,0,0.65); color: var(--amber); }
+    .modal-btns button:active { background: rgba(255,255,255,0.04); }
   </style>
 </head>
 <body>
 
-<!-- ════════════════ Settings Modal ════════════════ -->
+<!-- ═══ Settings Modal ═══ -->
 <div class="modal-overlay open" id="modalOverlay">
   <div class="modal">
     <h2>GAME SETUP</h2>
-
     <div class="field">
       <label>HOME TEAM NAME</label>
       <input id="inp-home" type="text" value="HOME" maxlength="12" autocomplete="off" spellcheck="false">
@@ -360,7 +347,6 @@
       <label>NUMBER OF PERIODS</label>
       <input id="inp-periods" type="number" value="4" min="1" max="10" inputmode="numeric">
     </div>
-
     <div class="modal-btns">
       <button id="cancelBtn" onclick="closeModal()">CANCEL</button>
       <button class="primary" onclick="applySettings()">START GAME</button>
@@ -368,16 +354,16 @@
   </div>
 </div>
 
-<!-- ════════════════ Period-end / Game-over Banner ════════════════ -->
+<!-- ═══ Period / Game Banner ═══ -->
 <div class="banner" id="banner">
   <div class="banner-box">
     <h2 id="bannerTitle">END OF PERIOD</h2>
     <p id="bannerMsg"></p>
-    <button class="ctrl-btn play" onclick="dismissBanner()">CONTINUE</button>
+    <button class="ctrl-btn play" id="bannerBtn" onclick="dismissBanner()">CONTINUE</button>
   </div>
 </div>
 
-<!-- ════════════════ Scoreboard ════════════════ -->
+<!-- ═══ Scoreboard ═══ -->
 <div class="board">
 
   <!-- Clock -->
@@ -394,31 +380,28 @@
     <div class="team-label" id="lbl-visitor">VISITOR</div>
   </div>
 
-  <!-- Scores + Period -->
+  <!-- Scores + period -->
   <div class="scores-row">
 
-    <!-- Home -->
-    <div class="score-panel" id="panel-home" onclick="scoreTeam('home', 1)">
+    <div class="score-panel" id="panel-home" onclick="scoreTeam('home',1)">
       <div class="score-num" id="num-home">0</div>
       <div class="adj-row" onclick="event.stopPropagation()">
-        <button class="adj-btn" onclick="scoreTeam('home', 2)">+2</button>
-        <button class="adj-btn" onclick="scoreTeam('home', 3)">+3</button>
-        <button class="adj-btn" onclick="scoreTeam('home', -1)">-1</button>
+        <button class="adj-btn" onclick="scoreTeam('home',2)">+2</button>
+        <button class="adj-btn" onclick="scoreTeam('home',3)">+3</button>
+        <button class="adj-btn" onclick="scoreTeam('home',-1)">-1</button>
       </div>
     </div>
 
-    <!-- Period -->
     <div class="period-panel">
       <div class="period-num" id="num-period">1</div>
     </div>
 
-    <!-- Visitor -->
-    <div class="score-panel" id="panel-visitor" onclick="scoreTeam('visitor', 1)">
+    <div class="score-panel" id="panel-visitor" onclick="scoreTeam('visitor',1)">
       <div class="score-num" id="num-visitor">0</div>
       <div class="adj-row" onclick="event.stopPropagation()">
-        <button class="adj-btn" onclick="scoreTeam('visitor', 2)">+2</button>
-        <button class="adj-btn" onclick="scoreTeam('visitor', 3)">+3</button>
-        <button class="adj-btn" onclick="scoreTeam('visitor', -1)">-1</button>
+        <button class="adj-btn" onclick="scoreTeam('visitor',2)">+2</button>
+        <button class="adj-btn" onclick="scoreTeam('visitor',3)">+3</button>
+        <button class="adj-btn" onclick="scoreTeam('visitor',-1)">-1</button>
       </div>
     </div>
 
@@ -432,47 +415,40 @@
     <button class="ctrl-btn" onclick="openModal()">SETTINGS</button>
   </div>
 
-</div><!-- /.board -->
+</div>
 
 <script>
-  // ── State ──────────────────────────────────────────────────
   const state = {
-    homeScore:    0,
-    visitorScore: 0,
-    period:       1,
-    totalPeriods: 4,
-    totalMins:    10,
-    timeLeft:     600,
-    running:      false,
-    gameOver:     false,
-    firstLoad:    true,
+    homeScore: 0, visitorScore: 0,
+    period: 1, totalPeriods: 4,
+    totalMins: 10, timeLeft: 600,
+    running: false, gameOver: false,
   };
 
   let ticker = null;
 
-  // ── DOM refs ───────────────────────────────────────────────
-  const clockEl    = document.getElementById('clock');
-  const numHome    = document.getElementById('num-home');
-  const numVisitor = document.getElementById('num-visitor');
-  const numPeriod  = document.getElementById('num-period');
-  const lblHome    = document.getElementById('lbl-home');
-  const lblVisitor = document.getElementById('lbl-visitor');
-  const playBtn    = document.getElementById('playBtn');
-  const banner     = document.getElementById('banner');
+  const clockEl     = document.getElementById('clock');
+  const numHome     = document.getElementById('num-home');
+  const numVisitor  = document.getElementById('num-visitor');
+  const numPeriod   = document.getElementById('num-period');
+  const lblHome     = document.getElementById('lbl-home');
+  const lblVisitor  = document.getElementById('lbl-visitor');
+  const playBtn     = document.getElementById('playBtn');
+  const banner      = document.getElementById('banner');
   const bannerTitle = document.getElementById('bannerTitle');
-  const bannerMsg  = document.getElementById('bannerMsg');
-  const cancelBtn  = document.getElementById('cancelBtn');
+  const bannerMsg   = document.getElementById('bannerMsg');
+  const bannerBtn   = document.getElementById('bannerBtn');
+  const cancelBtn   = document.getElementById('cancelBtn');
   const modalOverlay = document.getElementById('modalOverlay');
 
-  cancelBtn.style.display = 'none'; // no cancel on first load
-
+  cancelBtn.style.display = 'none';
   render();
 
-  // ── Render ─────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────
   function render() {
     const m = Math.floor(state.timeLeft / 60);
     const s = state.timeLeft % 60;
-    clockEl.textContent = `${pad(m)}:${pad(s)}`;
+    clockEl.textContent    = `${pad(m)}:${pad(s)}`;
     numHome.textContent    = state.homeScore;
     numVisitor.textContent = state.visitorScore;
     numPeriod.textContent  = state.period;
@@ -480,7 +456,7 @@
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
-  // ── Timer ──────────────────────────────────────────────────
+  // ── Timer ─────────────────────────────────────────────────
   function toggleTimer() {
     if (state.gameOver) return;
     state.running ? pause() : play();
@@ -501,8 +477,7 @@
   }
 
   function pause() {
-    clearInterval(ticker);
-    ticker = null;
+    clearInterval(ticker); ticker = null;
     state.running = false;
     playBtn.textContent = 'PLAY';
   }
@@ -521,7 +496,7 @@
     }, 280);
   }
 
-  // ── Period / Game ──────────────────────────────────────────
+  // ── Period / Game ─────────────────────────────────────────
   function nextPeriod() {
     pause();
     if (state.period < state.totalPeriods) {
@@ -536,22 +511,16 @@
 
   function showBanner(isGameOver) {
     state.gameOver = isGameOver;
-    const home = lblHome.textContent;
-    const vis  = lblVisitor.textContent;
+    const h = lblHome.textContent;
+    const v = lblVisitor.textContent;
     if (isGameOver) {
       bannerTitle.textContent = 'GAME OVER';
-      bannerMsg.innerHTML =
-        `Final Score<br>${home} <strong style="color:var(--yellow)">${state.homeScore}</strong>` +
-        ` &mdash; ` +
-        `<strong style="color:var(--yellow)">${state.visitorScore}</strong> ${vis}`;
-      document.querySelector('#banner .ctrl-btn').textContent = 'NEW GAME';
+      bannerMsg.innerHTML = `Final Score<br>${h}&nbsp;&nbsp;${state.homeScore}&nbsp;&mdash;&nbsp;${state.visitorScore}&nbsp;&nbsp;${v}`;
+      bannerBtn.textContent = 'NEW GAME';
     } else {
       bannerTitle.textContent = `END OF PERIOD ${state.period}`;
-      bannerMsg.innerHTML =
-        `${home} <strong style="color:var(--yellow)">${state.homeScore}</strong>` +
-        ` &mdash; ` +
-        `<strong style="color:var(--yellow)">${state.visitorScore}</strong> ${vis}`;
-      document.querySelector('#banner .ctrl-btn').textContent = 'CONTINUE';
+      bannerMsg.innerHTML = `${h}&nbsp;&nbsp;${state.homeScore}&nbsp;&mdash;&nbsp;${state.visitorScore}&nbsp;&nbsp;${v}`;
+      bannerBtn.textContent = 'CONTINUE';
     }
     banner.classList.add('show');
   }
@@ -561,51 +530,45 @@
     if (state.gameOver) {
       openModal();
     } else {
-      // advance period
       state.period++;
       state.timeLeft = state.totalMins * 60;
       render();
     }
   }
 
-  // ── Scoring ────────────────────────────────────────────────
+  // ── Scoring ───────────────────────────────────────────────
   function scoreTeam(team, pts) {
     if (pts < 0) {
-      if (team === 'home')    state.homeScore    = Math.max(0, state.homeScore    + pts);
-      else                    state.visitorScore = Math.max(0, state.visitorScore + pts);
+      if (team === 'home') state.homeScore = Math.max(0, state.homeScore + pts);
+      else                 state.visitorScore = Math.max(0, state.visitorScore + pts);
     } else {
-      if (team === 'home') state.homeScore    += pts;
+      if (team === 'home') state.homeScore += pts;
       else                 state.visitorScore += pts;
 
-      // Visual feedback
       const panel = document.getElementById(`panel-${team}`);
       const num   = team === 'home' ? numHome : numVisitor;
       panel.classList.add('scored');
       num.classList.remove('pop');
-      void num.offsetWidth; // reflow to restart animation
+      void num.offsetWidth;
       num.classList.add('pop');
-      setTimeout(() => { panel.classList.remove('scored'); num.classList.remove('pop'); }, 320);
+      setTimeout(() => { panel.classList.remove('scored'); num.classList.remove('pop'); }, 300);
     }
     render();
   }
 
-  // ── Settings modal ─────────────────────────────────────────
+  // ── Settings ──────────────────────────────────────────────
   function openModal() {
     pause();
     const hasGame = state.homeScore > 0 || state.visitorScore > 0 || state.period > 1;
     cancelBtn.style.display = hasGame ? '' : 'none';
-
     document.getElementById('inp-home').value    = lblHome.textContent;
     document.getElementById('inp-visitor').value = lblVisitor.textContent;
     document.getElementById('inp-minutes').value = state.totalMins;
     document.getElementById('inp-periods').value = state.totalPeriods;
-
     modalOverlay.classList.add('open');
   }
 
-  function closeModal() {
-    modalOverlay.classList.remove('open');
-  }
+  function closeModal() { modalOverlay.classList.remove('open'); }
 
   function applySettings() {
     const home    = document.getElementById('inp-home').value.trim()    || 'HOME';
@@ -615,7 +578,6 @@
 
     lblHome.textContent    = home;
     lblVisitor.textContent = visitor;
-
     state.totalMins    = mins;
     state.totalPeriods = periods;
     state.homeScore    = 0;
@@ -623,7 +585,6 @@
     state.period       = 1;
     state.timeLeft     = mins * 60;
     state.gameOver     = false;
-    state.firstLoad    = false;
 
     render();
     closeModal();
