@@ -46,6 +46,13 @@
     /* ── Clock ── */
     .clock-row { display: flex; justify-content: center; }
 
+    .clock-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6vh;
+    }
+
     .clock-box {
       border: var(--border);
       background: #000;
@@ -60,6 +67,27 @@
       text-shadow: 0 0 10px rgba(255,34,0,0.4);
       line-height: 1;
       letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shot-clock-box {
+      border: var(--border);
+      background: #000;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: clamp(54px, 8vh, 90px);
+      height: clamp(54px, 8vh, 90px);
+      cursor: pointer;
+    }
+
+    .shot-clock-digits {
+      font-family: 'DSEG7', 'Courier New', monospace;
+      font-size: clamp(26px, 5vh, 58px);
+      color: var(--red);
+      text-shadow: 0 0 8px rgba(255,34,0,0.4);
+      line-height: 1;
       font-variant-numeric: tabular-nums;
     }
 
@@ -81,11 +109,11 @@
     }
 
     .team-logo {
-      height: clamp(42px, 8.5vh, 96px);
+      height: clamp(56px, 12vh, 130px);
       width: auto;
-      max-width: clamp(42px, 8.5vh, 96px);
+      max-width: clamp(56px, 12vh, 130px);
       object-fit: contain;
-      border-radius: 4px;
+      border-radius: 6px;
       flex-shrink: 0;
     }
 
@@ -312,25 +340,25 @@
     }
 
     .banner-logo-lg {
-      height: clamp(60px, 16vh, 150px);
+      height: clamp(90px, 24vh, 220px);
       width: auto;
-      max-width: clamp(60px, 16vh, 150px);
+      max-width: clamp(90px, 24vh, 220px);
       object-fit: contain;
-      border-radius: 8px;
+      border-radius: 10px;
     }
 
     .banner-no-logo {
-      height: clamp(60px, 16vh, 150px);
-      width: clamp(60px, 16vh, 150px);
+      height: clamp(90px, 24vh, 220px);
+      width: clamp(90px, 24vh, 220px);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(10px, 2vh, 18px);
+      font-size: clamp(12px, 2.5vh, 22px);
       font-weight: 900;
       letter-spacing: 0.1em;
       color: #444;
       border: 2px solid #282828;
-      border-radius: 8px;
+      border-radius: 10px;
     }
 
     .banner-team-name-lg {
@@ -399,11 +427,11 @@
     }
 
     .winner-logo-img {
-      height: clamp(120px, 28vh, 280px);
+      height: clamp(170px, 40vh, 380px);
       width: auto;
-      max-width: 65vw;
+      max-width: 78vw;
       object-fit: contain;
-      border-radius: 14px;
+      border-radius: 20px;
       animation: zoomIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
@@ -640,6 +668,10 @@
       <label>Number of Periods</label>
       <input id="inp-periods" type="number" value="4" min="1" max="10" inputmode="numeric">
     </div>
+    <div class="field">
+      <label>Shot Clock (secs, 0 = off)</label>
+      <input id="inp-shotclock" type="number" value="0" min="0" max="99" inputmode="numeric">
+    </div>
 
     <div class="modal-btns">
       <button id="cancelBtn" onclick="closeModal()">Cancel</button>
@@ -662,8 +694,13 @@
 <div class="board">
 
   <div class="clock-row">
-    <div class="clock-box">
-      <div class="clock-digits" id="clock">10:00</div>
+    <div class="clock-col">
+      <div class="clock-box">
+        <div class="clock-digits" id="clock">10:00</div>
+      </div>
+      <div class="shot-clock-box" id="shotClockBox" onclick="resetShotClock()" style="display:none">
+        <div class="shot-clock-digits" id="shotClock">24</div>
+      </div>
     </div>
   </div>
 
@@ -723,6 +760,7 @@
     running: false, gameOver: false,
     homeLogo: null, visitorLogo: null,
     bannerType: '',
+    shotClockMax: 0, shotClockLeft: 0,
   };
 
   let ticker = null;
@@ -738,6 +776,8 @@
   const bannerBox    = document.getElementById('bannerBox');
   const cancelBtn    = document.getElementById('cancelBtn');
   const modalOverlay = document.getElementById('modalOverlay');
+  const shotClockBox = document.getElementById('shotClockBox');
+  const shotClockEl  = document.getElementById('shotClock');
 
   cancelBtn.style.display = 'none';
   render();
@@ -750,6 +790,12 @@
     numHome.textContent    = state.homeScore;
     numVisitor.textContent = state.visitorScore;
     numPeriod.textContent  = state.period;
+    if (state.shotClockMax > 0) {
+      shotClockEl.textContent    = pad(state.shotClockLeft);
+      shotClockBox.style.display = '';
+    } else {
+      shotClockBox.style.display = 'none';
+    }
   }
 
   function pad(n) { return String(n).padStart(2, '0'); }
@@ -772,6 +818,10 @@
     playBtn.textContent = 'PAUSE';
     ticker = setInterval(() => {
       state.timeLeft--;
+      if (state.shotClockMax > 0 && state.shotClockLeft > 0) {
+        state.shotClockLeft--;
+        if (state.shotClockLeft <= 0) flashShotClock();
+      }
       render();
       if (state.timeLeft <= 0) {
         pause();
@@ -789,6 +839,7 @@
   function resetPeriodTimer() {
     pause();
     state.timeLeft = state.totalMins * 60;
+    state.shotClockLeft = state.shotClockMax;
     render();
   }
 
@@ -798,6 +849,24 @@
       clockEl.style.visibility = (++n % 2 === 0) ? 'visible' : 'hidden';
       if (n >= 8) { clearInterval(id); clockEl.style.visibility = 'visible'; cb && cb(); }
     }, 280);
+  }
+
+  function flashShotClock() {
+    let n = 0;
+    const id = setInterval(() => {
+      shotClockEl.style.visibility = (++n % 2 === 0) ? 'visible' : 'hidden';
+      if (n >= 6) {
+        clearInterval(id);
+        shotClockEl.style.visibility = 'visible';
+        state.shotClockLeft = state.shotClockMax;
+        render();
+      }
+    }, 200);
+  }
+
+  function resetShotClock() {
+    state.shotClockLeft = state.shotClockMax;
+    render();
   }
 
   // ── Period / Banner logic ─────────────────────────────────
@@ -927,6 +996,7 @@
       if (team === 'home') state.homeScore += pts;
       else                 state.visitorScore += pts;
 
+      state.shotClockLeft = state.shotClockMax;
       const panel = document.getElementById(`panel-${team}`);
       const num   = team === 'home' ? numHome : numVisitor;
       panel.classList.add('scored');
@@ -978,10 +1048,11 @@
     pause();
     const hasGame = state.homeScore > 0 || state.visitorScore > 0 || state.period > 1;
     cancelBtn.style.display = hasGame ? '' : 'none';
-    document.getElementById('inp-home').value    = lblHome.textContent;
-    document.getElementById('inp-visitor').value = lblVisitor.textContent;
-    document.getElementById('inp-minutes').value = state.totalMins;
-    document.getElementById('inp-periods').value = state.totalPeriods;
+    document.getElementById('inp-home').value      = lblHome.textContent;
+    document.getElementById('inp-visitor').value   = lblVisitor.textContent;
+    document.getElementById('inp-minutes').value   = state.totalMins;
+    document.getElementById('inp-periods').value   = state.totalPeriods;
+    document.getElementById('inp-shotclock').value = state.shotClockMax;
     ['home','visitor'].forEach(t => {
       const src = t === 'home' ? state.homeLogo : state.visitorLogo;
       const el  = document.getElementById(`preview-${t}`);
@@ -1003,12 +1074,15 @@
     lblVisitor.textContent = visitor;
     state.totalMins    = mins;
     state.totalPeriods = periods;
+    const shotSecs = clamp(parseInt(document.getElementById('inp-shotclock').value) || 0, 0, 99);
     state.homeScore    = 0;
     state.visitorScore = 0;
     state.period       = 1;
     state.timeLeft     = mins * 60;
     state.gameOver     = false;
     state.bannerType   = '';
+    state.shotClockMax  = shotSecs;
+    state.shotClockLeft = shotSecs;
 
     applyLogoToBoard('home');
     applyLogoToBoard('visitor');
