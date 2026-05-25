@@ -19,7 +19,7 @@
       --amber: #FFA800;
       --red:   #FF2200;
       --green: #00BB44;
-      --border: 2px solid rgba(255,255,255,0.55);
+      --border: 3px solid rgba(255,255,255,0.55);
     }
 
     html, body {
@@ -50,6 +50,7 @@
       border: var(--border);
       background: #000;
       padding: 0.6vh 5vw;
+      border-radius: 14px;
     }
 
     .clock-digits {
@@ -134,6 +135,7 @@
       flex: 1;
       border: var(--border);
       background: #000;
+      border-radius: 18px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -179,22 +181,32 @@
 
     .adj-btn {
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(8px, 1.3vh, 13px);
+      font-size: clamp(11px, 1.8vh, 17px);
       font-weight: 700;
-      background: #181818;
-      color: #777;
-      border: 1px solid #2e2e2e;
-      padding: 0.5vh 1vw;
+      padding: clamp(7px, 1.4vh, 15px) clamp(10px, 2.2vw, 24px);
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: 10px;
       letter-spacing: 0.05em;
+      min-width: clamp(40px, 5.5vw, 62px);
     }
-    .adj-btn:active { background: #2e2e2e; color: #ccc; }
+    .adj-btn.plus {
+      background: rgba(0,187,68,0.13);
+      color: #00cc55;
+      border: 1.5px solid rgba(0,187,68,0.42);
+    }
+    .adj-btn.plus:active { background: rgba(0,187,68,0.28); }
+    .adj-btn.minus {
+      background: rgba(255,34,0,0.1);
+      color: #ff6644;
+      border: 1.5px solid rgba(255,34,0,0.38);
+    }
+    .adj-btn.minus:active { background: rgba(255,34,0,0.25); }
 
     /* ── Period panel ── */
     .period-panel {
       border: var(--border);
       background: #000;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -671,9 +683,9 @@
     <div class="score-panel" id="panel-home" onclick="scoreTeam('home',1)">
       <div class="score-num" id="num-home">0</div>
       <div class="adj-row" onclick="event.stopPropagation()">
-        <button class="adj-btn" onclick="scoreTeam('home',2)">+2</button>
-        <button class="adj-btn" onclick="scoreTeam('home',3)">+3</button>
-        <button class="adj-btn" onclick="scoreTeam('home',-1)">-1</button>
+        <button class="adj-btn plus" onclick="scoreTeam('home',2)">+2</button>
+        <button class="adj-btn plus" onclick="scoreTeam('home',3)">+3</button>
+        <button class="adj-btn minus" onclick="scoreTeam('home',-1)">-1</button>
       </div>
     </div>
 
@@ -687,9 +699,9 @@
     <div class="score-panel" id="panel-visitor" onclick="scoreTeam('visitor',1)">
       <div class="score-num" id="num-visitor">0</div>
       <div class="adj-row" onclick="event.stopPropagation()">
-        <button class="adj-btn" onclick="scoreTeam('visitor',2)">+2</button>
-        <button class="adj-btn" onclick="scoreTeam('visitor',3)">+3</button>
-        <button class="adj-btn" onclick="scoreTeam('visitor',-1)">-1</button>
+        <button class="adj-btn plus" onclick="scoreTeam('visitor',2)">+2</button>
+        <button class="adj-btn plus" onclick="scoreTeam('visitor',3)">+3</button>
+        <button class="adj-btn minus" onclick="scoreTeam('visitor',-1)">-1</button>
       </div>
     </div>
   </div>
