@@ -436,7 +436,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.92);
+      background: rgba(10,30,60,0.82);
       align-items: center;
       justify-content: center;
       z-index: 1000;
@@ -446,16 +446,18 @@
     .modal-overlay.open { display: flex; }
 
     .modal {
-      background: #080808;
-      border: 2px solid var(--amber);
+      background: #eaf4ff;
+      border: 2px solid #6bb8f0;
+      border-radius: 20px;
       padding: 3vh 5vw;
       width: 90%;
       max-width: 420px;
       flex-shrink: 0;
+      box-shadow: 0 8px 40px rgba(0,80,180,0.18);
     }
 
     .modal h2 {
-      color: var(--amber);
+      color: #1565a8;
       font-size: clamp(12px, 1.7vh, 16px);
       letter-spacing: 0.35em;
       text-align: center;
@@ -468,7 +470,7 @@
       display: block;
       font-size: clamp(8px, 1vh, 10px);
       letter-spacing: 0.2em;
-      color: #666;
+      color: #4a7fa8;
       margin-bottom: 0.5vh;
       text-transform: uppercase;
     }
@@ -476,15 +478,16 @@
     .field input[type="text"],
     .field input[type="number"] {
       width: 100%;
-      background: #121212;
-      border: 1px solid #333;
-      color: #fff;
+      background: #ffffff;
+      border: 1.5px solid #a8d4f0;
+      border-radius: 10px;
+      color: #1a3a5c;
       padding: 1vh 2vw;
       font-family: 'Orbitron', sans-serif;
       font-size: clamp(12px, 1.6vh, 15px);
       outline: none;
     }
-    .field input:focus { border-color: rgba(255,168,0,0.6); }
+    .field input:focus { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,0.15); }
 
     .logo-upload-row {
       display: flex;
@@ -496,9 +499,9 @@
       width: clamp(32px, 5vh, 48px);
       height: clamp(32px, 5vh, 48px);
       object-fit: contain;
-      border: 1px solid #333;
-      border-radius: 3px;
-      background: #111;
+      border: 1.5px solid #a8d4f0;
+      border-radius: 8px;
+      background: #fff;
       flex-shrink: 0;
     }
 
@@ -507,15 +510,16 @@
       font-size: clamp(8px, 1.1vh, 11px);
       font-weight: 700;
       letter-spacing: 0.08em;
-      background: #181818;
-      color: #888;
-      border: 1px solid #333;
+      background: #c6e4f7;
+      color: #1565a8;
+      border: 1.5px solid #7bbfe8;
+      border-radius: 10px;
       padding: 0.7vh 1.5vw;
       cursor: pointer;
       text-transform: uppercase;
       flex-shrink: 0;
     }
-    .upload-label:active { background: #2a2a2a; }
+    .upload-label:active { background: #a8d4f0; }
     .upload-label input[type="file"] { display: none; }
 
     .remove-btn {
@@ -524,14 +528,15 @@
       font-weight: 700;
       letter-spacing: 0.05em;
       background: transparent;
-      color: #555;
-      border: 1px solid #2a2a2a;
+      color: #7aaac8;
+      border: 1.5px solid #b8d8ee;
+      border-radius: 10px;
       padding: 0.7vh 1vw;
       cursor: pointer;
       text-transform: uppercase;
       flex-shrink: 0;
     }
-    .remove-btn:active { color: #999; }
+    .remove-btn:active { background: #daeef9; color: #1565a8; }
 
     .modal-btns {
       display: flex;
@@ -547,13 +552,18 @@
       letter-spacing: 0.15em;
       padding: 1.2vh;
       cursor: pointer;
-      background: transparent;
-      border: 1.5px solid #2a2a2a;
-      color: #777;
+      background: #d6ecf8;
+      border: 1.5px solid #a8d4f0;
+      border-radius: 12px;
+      color: #4a7fa8;
       text-transform: uppercase;
     }
-    .modal-btns button.primary { border-color: rgba(255,168,0,0.65); color: var(--amber); }
-    .modal-btns button:active { background: rgba(255,255,255,0.04); }
+    .modal-btns button.primary {
+      background: #2980b9;
+      border-color: #1a6699;
+      color: #fff;
+    }
+    .modal-btns button:active { filter: brightness(0.92); }
   </style>
 </head>
 <body>
