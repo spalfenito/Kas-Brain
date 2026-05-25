@@ -55,8 +55,8 @@
     .clock-digits {
       font-family: 'DSEG7', 'Courier New', monospace;
       font-size: clamp(38px, 9.5vh, 120px);
-      color: var(--amber);
-      text-shadow: 0 0 10px rgba(255,168,0,0.4);
+      color: var(--red);
+      text-shadow: 0 0 10px rgba(255,34,0,0.4);
       line-height: 1;
       letter-spacing: 0.04em;
       font-variant-numeric: tabular-nums;
@@ -99,14 +99,28 @@
       white-space: nowrap;
     }
 
+    .per-spacer {
+      width: clamp(54px, min(13vh, 9vw), 132px);
+      flex-shrink: 0;
+    }
+
     .per-label {
-      min-width: 9vw;
       text-align: center;
       font-size: clamp(9px, 1.8vh, 16px);
       font-weight: 700;
       letter-spacing: 0.15em;
       color: #888;
       text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .period-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      gap: 0.4vh;
     }
 
     /* ── Score panels ── */
@@ -184,8 +198,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: clamp(48px, 8vw, 110px);
-      padding: 0 1.5vw;
+      width: clamp(54px, min(13vh, 9vw), 132px);
+      height: clamp(54px, min(13vh, 9vw), 132px);
+      flex-shrink: 0;
     }
 
     .period-num {
@@ -645,7 +660,7 @@
       <img class="team-logo" id="logo-home" style="display:none">
       <span class="team-label" id="lbl-home">HOME</span>
     </div>
-    <div class="per-label">PER</div>
+    <div class="per-spacer"></div>
     <div class="team-label-group">
       <span class="team-label" id="lbl-visitor">VISITOR</span>
       <img class="team-logo" id="logo-visitor" style="display:none">
@@ -662,8 +677,11 @@
       </div>
     </div>
 
-    <div class="period-panel">
-      <div class="period-num" id="num-period">1</div>
+    <div class="period-wrapper">
+      <div class="per-label">PER</div>
+      <div class="period-panel">
+        <div class="period-num" id="num-period">1</div>
+      </div>
     </div>
 
     <div class="score-panel" id="panel-visitor" onclick="scoreTeam('visitor',1)">
@@ -873,7 +891,7 @@
       html = `
         ${logoHtml}
         <div class="winner-name">${esc(name)}</div>
-        <div class="winner-wins">WINS!</div>
+        <div class="winner-wins">WIN!</div>
         <div class="winner-tap">TAP FOR NEW GAME</div>
       `;
     }
