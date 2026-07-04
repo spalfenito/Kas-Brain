@@ -20,6 +20,8 @@
       --red:   #FF2200;
       --green: #00BB44;
       --border: 3px solid rgba(255,255,255,0.55);
+      --digit-color: #FF2200;
+      --digit-glow:  rgba(255,34,0,0.4);
     }
 
     html, body {
@@ -63,8 +65,8 @@
     .clock-digits {
       font-family: 'DSEG7', 'Courier New', monospace;
       font-size: clamp(38px, 9.5vh, 120px);
-      color: var(--red);
-      text-shadow: 0 0 10px rgba(255,34,0,0.4);
+      color: var(--digit-color);
+      text-shadow: 0 0 10px var(--digit-glow);
       line-height: 1;
       letter-spacing: 0.04em;
       font-variant-numeric: tabular-nums;
@@ -85,8 +87,8 @@
     .shot-clock-digits {
       font-family: 'DSEG7', 'Courier New', monospace;
       font-size: clamp(26px, 5vh, 58px);
-      color: var(--red);
-      text-shadow: 0 0 8px rgba(255,34,0,0.4);
+      color: var(--digit-color);
+      text-shadow: 0 0 8px var(--digit-glow);
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
@@ -188,8 +190,8 @@
     .score-num {
       font-family: 'DSEG7', 'Courier New', monospace;
       font-size: clamp(56px, min(22vh, 15vw), 240px);
-      color: var(--red);
-      text-shadow: 0 0 10px rgba(255,34,0,0.4);
+      color: var(--digit-color);
+      text-shadow: 0 0 10px var(--digit-glow);
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
@@ -246,8 +248,8 @@
     .period-num {
       font-family: 'DSEG7', 'Courier New', monospace;
       font-size: clamp(34px, min(11vh, 7vw), 110px);
-      color: var(--green);
-      text-shadow: 0 0 10px rgba(0,187,68,0.4);
+      color: var(--digit-color);
+      text-shadow: 0 0 10px var(--digit-glow);
       line-height: 1;
     }
 
@@ -372,8 +374,8 @@
     .banner-score-lg {
       font-family: 'DSEG7', 'Courier New', monospace;
       font-size: clamp(38px, 10vh, 100px);
-      color: var(--red);
-      text-shadow: 0 0 8px rgba(255,34,0,0.4);
+      color: var(--digit-color);
+      text-shadow: 0 0 8px var(--digit-glow);
       line-height: 1;
     }
 
@@ -620,6 +622,35 @@
     }
     .remove-btn:active { background: #daeef9; color: #1565a8; }
 
+    .color-pick-row {
+      display: flex;
+      align-items: center;
+      gap: 1.2vw;
+    }
+
+    .color-swatch {
+      width: clamp(22px, 3.2vh, 34px);
+      height: clamp(22px, 3.2vh, 34px);
+      border-radius: 7px;
+      border: 1.5px solid #a8d4f0;
+      flex-shrink: 0;
+      background: #FF2200;
+    }
+
+    .field select {
+      flex: 1;
+      background: #ffffff;
+      border: 1.5px solid #a8d4f0;
+      border-radius: 10px;
+      color: #1a3a5c;
+      padding: 1vh 2vw;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(12px, 1.6vh, 15px);
+      outline: none;
+      cursor: pointer;
+    }
+    .field select:focus { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,0.15); }
+
     .modal-btns {
       display: flex;
       gap: 1.5vw;
@@ -707,6 +738,24 @@
     <div class="field">
       <label>Shot Clock (secs, 0 = off)</label>
       <input id="inp-shotclock" type="number" value="0" min="0" max="99" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Number Color</label>
+      <div class="color-pick-row">
+        <div class="color-swatch" id="color-swatch"></div>
+        <select id="inp-color" onchange="updateColorSwatch()">
+          <option value="red">Red</option>
+          <option value="amber">Amber</option>
+          <option value="green">Green</option>
+          <option value="cyan">Cyan</option>
+          <option value="blue">Blue</option>
+          <option value="purple">Purple</option>
+          <option value="pink">Pink</option>
+          <option value="white">White</option>
+          <option value="yellow">Yellow</option>
+          <option value="lime">Lime</option>
+        </select>
+      </div>
     </div>
 
     <div class="modal-btns">
@@ -797,6 +846,7 @@
     homeLogo: null, visitorLogo: null,
     bannerType: '',
     gameFormat: 'periods',
+    digitColor: 'red',
     shotClockMax: 0, shotClockLeft: 0,
   };
 
@@ -817,6 +867,8 @@
   const shotClockEl  = document.getElementById('shotClock');
 
   cancelBtn.style.display = 'none';
+  applyDigitColor(state.digitColor);
+  updateColorSwatch();
   render();
 
   // ── Render ────────────────────────────────────────────────
@@ -862,6 +914,30 @@
                       halves:   'Minutes Per Half',    innings: 'Minutes Per Inning' };
     document.getElementById('periodFieldLabel').textContent = pLabels[fmt];
     document.getElementById('minutesFieldLabel').textContent = mLabels[fmt];
+  }
+
+  const COLORS = {
+    red:    { color: '#FF2200', glow: 'rgba(255,34,0,0.4)' },
+    amber:  { color: '#FFA800', glow: 'rgba(255,168,0,0.4)' },
+    green:  { color: '#00CC44', glow: 'rgba(0,204,68,0.4)' },
+    cyan:   { color: '#00CCEE', glow: 'rgba(0,204,238,0.4)' },
+    blue:   { color: '#4499FF', glow: 'rgba(68,153,255,0.4)' },
+    purple: { color: '#CC44FF', glow: 'rgba(204,68,255,0.4)' },
+    pink:   { color: '#FF44AA', glow: 'rgba(255,68,170,0.4)' },
+    white:  { color: '#FFFFFF', glow: 'rgba(255,255,255,0.25)' },
+    yellow: { color: '#FFE000', glow: 'rgba(255,224,0,0.4)' },
+    lime:   { color: '#AAFF00', glow: 'rgba(170,255,0,0.4)' },
+  };
+
+  function applyDigitColor(key) {
+    const c = COLORS[key] || COLORS.red;
+    document.documentElement.style.setProperty('--digit-color', c.color);
+    document.documentElement.style.setProperty('--digit-glow',  c.glow);
+  }
+
+  function updateColorSwatch() {
+    const key = document.getElementById('inp-color').value;
+    document.getElementById('color-swatch').style.background = (COLORS[key] || COLORS.red).color;
   }
 
   function esc(s) {
@@ -1126,6 +1202,8 @@
                       halves:   'Minutes Per Half',    innings: 'Minutes Per Inning' };
     document.getElementById('periodFieldLabel').textContent  = pLabels[state.gameFormat];
     document.getElementById('minutesFieldLabel').textContent = mLabels[state.gameFormat];
+    document.getElementById('inp-color').value = state.digitColor;
+    updateColorSwatch();
     ['home','visitor'].forEach(t => {
       const src = t === 'home' ? state.homeLogo : state.visitorLogo;
       const el  = document.getElementById(`preview-${t}`);
@@ -1146,7 +1224,9 @@
 
     lblHome.textContent    = home;
     lblVisitor.textContent = visitor;
+    const colorKey = document.getElementById('inp-color').value;
     state.gameFormat   = fmt;
+    state.digitColor   = colorKey;
     state.totalMins    = mins;
     state.totalPeriods = periods;
     const shotSecs = clamp(parseInt(document.getElementById('inp-shotclock').value) || 0, 0, 99);
@@ -1159,6 +1239,7 @@
     state.shotClockMax  = shotSecs;
     state.shotClockLeft = shotSecs;
 
+    applyDigitColor(colorKey);
     applyLogoToBoard('home');
     applyLogoToBoard('visitor');
     render();
