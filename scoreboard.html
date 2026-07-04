@@ -866,6 +866,19 @@
   const shotClockBox = document.getElementById('shotClockBox');
   const shotClockEl  = document.getElementById('shotClock');
 
+  const COLORS = {
+    red:    { color: '#FF2200', glow: 'rgba(255,34,0,0.4)' },
+    amber:  { color: '#FFA800', glow: 'rgba(255,168,0,0.4)' },
+    green:  { color: '#00CC44', glow: 'rgba(0,204,68,0.4)' },
+    cyan:   { color: '#00CCEE', glow: 'rgba(0,204,238,0.4)' },
+    blue:   { color: '#4499FF', glow: 'rgba(68,153,255,0.4)' },
+    purple: { color: '#CC44FF', glow: 'rgba(204,68,255,0.4)' },
+    pink:   { color: '#FF44AA', glow: 'rgba(255,68,170,0.4)' },
+    white:  { color: '#FFFFFF', glow: 'rgba(255,255,255,0.25)' },
+    yellow: { color: '#FFE000', glow: 'rgba(255,224,0,0.4)' },
+    lime:   { color: '#AAFF00', glow: 'rgba(170,255,0,0.4)' },
+  };
+
   cancelBtn.style.display = 'none';
   applyDigitColor(state.digitColor);
   updateColorSwatch();
@@ -915,19 +928,6 @@
     document.getElementById('periodFieldLabel').textContent = pLabels[fmt];
     document.getElementById('minutesFieldLabel').textContent = mLabels[fmt];
   }
-
-  const COLORS = {
-    red:    { color: '#FF2200', glow: 'rgba(255,34,0,0.4)' },
-    amber:  { color: '#FFA800', glow: 'rgba(255,168,0,0.4)' },
-    green:  { color: '#00CC44', glow: 'rgba(0,204,68,0.4)' },
-    cyan:   { color: '#00CCEE', glow: 'rgba(0,204,238,0.4)' },
-    blue:   { color: '#4499FF', glow: 'rgba(68,153,255,0.4)' },
-    purple: { color: '#CC44FF', glow: 'rgba(204,68,255,0.4)' },
-    pink:   { color: '#FF44AA', glow: 'rgba(255,68,170,0.4)' },
-    white:  { color: '#FFFFFF', glow: 'rgba(255,255,255,0.25)' },
-    yellow: { color: '#FFE000', glow: 'rgba(255,224,0,0.4)' },
-    lime:   { color: '#AAFF00', glow: 'rgba(170,255,0,0.4)' },
-  };
 
   function applyDigitColor(key) {
     const c = COLORS[key] || COLORS.red;
