@@ -1,0 +1,94 @@
+# Home Finance
+
+A private household finance dashboard that reads a Google Sheet live and runs on Cloudflare Workers.
+
+- **Levers:** monthly take-home pay for each person, everyday spending, savings, the total paid toward cards each month, payoff strategy, and interest rates.
+- **What it works out:** money left over each month, the debt-free date, total interest, interest and time saved compared with paying only the minimums, when each card gets paid off, and payoff time at different payment levels.
+- **From the sheet:** bills by due date, card balances and 0% deals, savings, and auto charges.
+
+No financial data lives in this repo. The Worker reads the sheet with a Google service account at request time and returns only the blocks the page uses (bills, cards, savings, the cash-flow block, paychecks, auto charges). Other cells on the tab are never sent to the browser.
+
+Open `/?demo` to see the page with made-up numbers.
+
+## How the sheet is read
+
+From the tab named `the budget` (change it with `SHEET_TAB` in `wrangler.toml`), the Worker reads:
+
+| Block | Found by |
+|---|---|
+| Bills | Rows with a date like `1-Nov` in column A, payee in B, amount in C |
+| Cards | A header cell like `Name's cards`; the next four columns are balance, due date, minimum, notes |
+| 0% deals | Card names like `… - no intrest Aug 2027`, `… on $7000`, `… 1 year starting Nov '26` |
+| Paychecks | The cell `incoming`; the rows under it have a label to the left and an amount |
+| Cash flow | Rows ending in the `what's left` row (`expense`, `save` set the lever defaults) |
+| Savings | The rows under `deep savings` |
+| Auto charges | The rows under `auto charges on cards` |
+
+If you rename one of those labels, update `src/parse.js`.
+
+## Setup (about 20 minutes)
+
+### 1. Let the Worker read the sheet (Google Cloud)
+
+1. Go to <https://console.cloud.google.com/>, create a project, and enable the **Google Sheets API** for it.
+2. Go to **IAM & Admin → Service accounts → Create service account**. It needs no roles.
+3. Open the service account, then go to **Keys → Add key → JSON**. A key file downloads. Keep it private and never commit it.
+4. In the Google Sheet, click **Share** and add the service account's email (`…@….iam.gserviceaccount.com`) as a **Viewer**.
+
+### 2. Deploy to Cloudflare
+
+From this folder:
+
+```bash
+npm install
+npx wrangler login
+npx wrangler secret put SHEET_ID                      # the long id in the sheet's URL, between /d/ and /edit
+npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_JSON < path/to/key.json
+npm run deploy
+```
+
+Or deploy from GitHub: in the Cloudflare dashboard, go to **Workers & Pages → Create → Import a repository**. Pick this repo, set the **root directory** to `home-finance`, and keep the deploy command `npx wrangler deploy`. Then add the two secrets under the Worker's **Settings → Variables and Secrets**.
+
+### 3. Lock it down (do this before using it with real data)
+
+This site shows real balances, so put it behind **Cloudflare Access**. It's free for up to 50 people.
+
+1. In the Worker's **Settings → Domains & Routes**, turn on Cloudflare Access for the `workers.dev` route. Or open **Zero Trust → Access → Applications → Add an application → Self-hosted** for your custom domain.
+2. Add a policy that allows only your two email addresses.
+3. Optional, but recommended: copy the application's **Audience (AUD) tag** and your team domain. Then run:
+   ```bash
+   npx wrangler secret put ACCESS_TEAM_DOMAIN   # e.g. yourteam.cloudflareaccess.com
+   npx wrangler secret put ACCESS_AUD
+   ```
+   With these set, the API checks the Access login on every request, so the data can't be fetched around Access.
+
+### 4. Optional: share lever settings between both of you
+
+Without this, each browser keeps its own incomes, APRs and slider positions. To share them:
+
+```bash
+npx wrangler kv namespace create SETTINGS
+```
+
+Paste the id it prints into the commented `[[kv_namespaces]]` block in `wrangler.toml`, uncomment the block, and deploy again.
+
+## Local development
+
+Create `.dev.vars` (it's git-ignored):
+
+```
+SHEET_ID=...
+GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+```
+
+Then run `npm run dev`. Run `npm test` for the parser and payoff-math tests.
+
+## How the payoff math works
+
+- Each card is split into the part charging interest and the part on a 0% deal.
+- Every month: interest is added, each card's minimum is paid, and the rest of the monthly card budget goes where the strategy says. Minimums are the greater of the listed minimum, about 1% of the balance plus that month's interest, or $25.
+  - **Smart:** pays enough on each 0% deal to clear it before the deal ends, then puts the rest on the highest rate.
+  - **Highest rate:** all extra money to the highest rate first (avalanche).
+  - **Smallest balance:** smallest balance first (snowball).
+- Store cards like Best Buy are treated as deferred interest: if the deal ends with a balance left, all the skipped interest is charged back.
+- The sheet has no interest rates. Cards use the default rate lever until you type each card's real APR in the payoff plan.

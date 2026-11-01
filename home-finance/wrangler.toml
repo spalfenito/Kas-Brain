@@ -1,0 +1,23 @@
+name = "home-finance"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[vars]
+SHEET_TAB = "the budget"
+
+# Optional: shared settings (incomes, APRs, slider positions) for everyone who uses the site.
+# Create it with `npx wrangler kv namespace create SETTINGS`, then paste the id below and uncomment.
+# [[kv_namespaces]]
+# binding = "SETTINGS"
+# id = "PASTE_ID_HERE"
+
+# Secrets (never commit these; set with `npx wrangler secret put NAME`):
+#   SHEET_ID                     - the long id in the Google Sheet's URL
+#   GOOGLE_SERVICE_ACCOUNT_JSON  - the service account key file contents
+#   ACCESS_TEAM_DOMAIN           - optional, e.g. yourteam.cloudflareaccess.com
+#   ACCESS_AUD                   - optional, the Access application's AUD tag

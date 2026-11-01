@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Home Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="vendor/chart-4.4.1.umd.js" defer></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Home Finance</h1>
+      <p class="muted" id="status">Loading the budget sheet…</p>
+    </div>
+    <button type="button" id="refresh" class="btn">Refresh from sheet</button>
+  </header>
+
+  <div id="error" class="alert alert--bad" hidden></div>
+
+  <section class="tiles" aria-label="Summary">
+    <div class="tile"><span class="tile-label">Total card debt</span><span class="tile-value" id="k-debt">—</span><span class="tile-note" id="k-debt-note"></span></div>
+    <div class="tile tile--bad"><span class="tile-label">Charging interest now</span><span class="tile-value" id="k-interest">—</span><span class="tile-note">Pay this down first</span></div>
+    <div class="tile"><span class="tile-label">Left over each month</span><span class="tile-value" id="k-left">—</span><span class="tile-note" id="k-left-note">With the levers below</span></div>
+    <div class="tile tile--good"><span class="tile-label">Debt-free</span><span class="tile-value" id="k-free">—</span><span class="tile-note" id="k-free-note"></span></div>
+  </section>
+
+  <div class="plan">
+    <section class="panel levers" aria-labelledby="levers-h">
+      <h2 id="levers-h">Levers</h2>
+
+      <fieldset>
+        <legend>Monthly take-home pay</legend>
+        <div id="incomes" class="incomes"></div>
+        <p class="hint">Starts from the paycheck amounts on the sheet. Click a name to rename it.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Spending</legend>
+        <div class="lever">
+          <label for="everyday">Everyday spending <span class="hint">groceries, gas, takeout</span></label>
+          <output id="everyday-out" for="everyday"></output>
+          <input type="range" id="everyday" min="0" max="6000" step="50">
+        </div>
+        <div class="lever">
+          <label for="savings">Saving each month</label>
+          <output id="savings-out" for="savings"></output>
+          <input type="range" id="savings" min="0" max="4000" step="50">
+        </div>
+        <div class="fixed-row"><span>Bills on the sheet (not cards)</span><b id="living-bills">—</b></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Credit cards</legend>
+        <div class="lever lever--main">
+          <label for="monthly">Paid toward cards each month</label>
+          <output id="monthly-out" for="monthly"></output>
+          <input type="range" id="monthly" min="0" max="10000" step="25">
+          <p class="hint" id="monthly-hint"></p>
+        </div>
+        <div class="lever">
+          <span class="label" id="strategy-l">Where extra money goes</span>
+          <div class="seg" role="radiogroup" aria-labelledby="strategy-l">
+            <label><input type="radio" name="strategy" value="smart"><span>Smart</span></label>
+            <label><input type="radio" name="strategy" value="avalanche"><span>Highest rate</span></label>
+            <label><input type="radio" name="strategy" value="snowball"><span>Smallest balance</span></label>
+          </div>
+          <p class="hint" id="strategy-hint"></p>
+        </div>
+        <div class="lever">
+          <label for="apr">Interest rate for cards without one set</label>
+          <output id="apr-out" for="apr"></output>
+          <input type="range" id="apr" min="0" max="36" step="0.25">
+          <p class="hint">The sheet has no rates. Set each card's real APR in the payoff plan below.</p>
+        </div>
+      </fieldset>
+      <p class="hint" id="sync-note"></p>
+    </section>
+
+    <div class="results">
+      <section class="panel">
+        <h2>Where the money goes each month</h2>
+        <div class="chart chart--short"><canvas id="c-cash" aria-label="Monthly cash flow"></canvas></div>
+        <div class="callouts" id="cash-callouts"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Interest</h2>
+        <div class="stats">
+          <div><span class="tile-label">You'll pay</span><b id="s-interest">—</b></div>
+          <div><span class="tile-label">Saved vs. minimums only</span><b id="s-saved" class="good">—</b></div>
+          <div><span class="tile-label">Time saved</span><b id="s-time" class="good">—</b></div>
+          <div><span class="tile-label">Interest per month now</span><b id="s-monthly-int" class="bad">—</b></div>
+        </div>
+        <div class="chart chart--short"><canvas id="c-interest" aria-label="Interest: your plan vs minimums only"></canvas></div>
+        <div class="callouts" id="plan-callouts"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Card balance over time</h2>
+        <p class="muted">Your plan compared with paying only the minimums.</p>
+        <div class="chart"><canvas id="c-balance" aria-label="Total card balance over time"></canvas></div>
+      </section>
+
+      <section class="panel">
+        <h2>Payoff time by monthly payment</h2>
+        <p class="muted">Months until every card is paid off. Your current setting is highlighted.</p>
+        <div class="chart"><canvas id="c-sens" aria-label="Months to debt-free at different payments"></canvas></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2>Payoff plan</h2>
+    <p class="muted">Each card in the order your plan pays it off. Type in each card's real interest rate (APR) for exact numbers. "~" marks a minimum the sheet doesn't list, which is estimated.</p>
+    <div class="chart" id="payoff-wrap"><canvas id="c-payoff" aria-label="Months until each card is paid off"></canvas></div>
+    <div class="legend"><span><i class="sw sw--bad"></i>Charging interest</span><span><i class="sw sw--promo"></i>0% deal</span></div>
+    <div class="tablewrap">
+      <table id="plan-table">
+        <thead><tr>
+          <th class="num">#</th><th>Card</th><th>Whose</th><th class="num">Balance</th><th>APR</th><th>Status</th>
+          <th class="num wide">Minimum</th><th>Paid off</th><th class="num">Interest</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>Bills by due date</h2>
+      <p class="muted" id="bills-note"></p>
+      <div class="chart" id="bills-wrap"><canvas id="c-bills" aria-label="Bills by due date"></canvas></div>
+    </section>
+    <div class="stack">
+      <section class="panel">
+        <h2>Savings &amp; retirement</h2>
+        <p class="muted" id="savings-note"></p>
+        <div class="chart" id="sav-wrap"><canvas id="c-savings" aria-label="Savings balances"></canvas></div>
+      </section>
+      <section class="panel">
+        <h2>Auto charges on cards</h2>
+        <p class="muted" id="auto-note"></p>
+        <div class="chart" id="auto-wrap"><canvas id="c-auto" aria-label="Monthly auto charges"></canvas></div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="muted foot">Estimates only. Interest is figured monthly at the rates you enter; real statements vary a little.</footer>
+</div>
+</body>
+</html>

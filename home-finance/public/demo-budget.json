@@ -1,0 +1,215 @@
+{
+ "bills": [
+  {
+   "due": "1-Nov",
+   "payee": "Home insurance",
+   "amount": 120,
+   "isCardPayment": false
+  },
+  {
+   "due": "1-Nov",
+   "payee": "Big Bank card - auto",
+   "amount": 90,
+   "isCardPayment": true
+  },
+  {
+   "due": "3-Nov",
+   "payee": "Internet",
+   "amount": 80,
+   "isCardPayment": false
+  },
+  {
+   "due": "5-Nov",
+   "payee": "Electric",
+   "amount": 210,
+   "isCardPayment": false
+  },
+  {
+   "due": "7-Nov",
+   "payee": "Car insurance",
+   "amount": 310,
+   "isCardPayment": false
+  },
+  {
+   "due": "10-Nov",
+   "payee": "Car payment",
+   "amount": 450,
+   "isCardPayment": false
+  },
+  {
+   "due": "12-Nov",
+   "payee": "Cash Back card",
+   "amount": 75,
+   "isCardPayment": true
+  },
+  {
+   "due": "15-Nov",
+   "payee": "Phones",
+   "amount": 160,
+   "isCardPayment": false
+  },
+  {
+   "due": "18-Nov",
+   "payee": "Water",
+   "amount": 95,
+   "isCardPayment": false
+  },
+  {
+   "due": "20-Nov",
+   "payee": "Streaming",
+   "amount": 35,
+   "isCardPayment": false
+  },
+  {
+   "due": "1-Dec",
+   "payee": "Mortgage",
+   "amount": 1900,
+   "isCardPayment": false
+  },
+  {
+   "due": "5-Dec",
+   "payee": "Gym",
+   "amount": 60,
+   "isCardPayment": false
+  }
+ ],
+ "cards": [
+  {
+   "owner": "Alex",
+   "name": "Travel Rewards",
+   "label": "Travel Rewards - no intrest Jun 2027 on $3000",
+   "balance": 9500,
+   "due": "Nov-12",
+   "minimum": 95,
+   "note": "",
+   "promo": {
+    "end": "2027-06-01",
+    "amount": 3000,
+    "deferred": false
+   }
+  },
+  {
+   "owner": "Alex",
+   "name": "Big Bank",
+   "label": "Big Bank - no intrest Sep 2027",
+   "balance": 4200,
+   "due": "Nov-1",
+   "minimum": 90,
+   "note": "",
+   "promo": {
+    "end": "2027-09-01",
+    "amount": 4200,
+    "deferred": false
+   }
+  },
+  {
+   "owner": "Alex",
+   "name": "Department Store",
+   "label": "Department Store",
+   "balance": 0,
+   "due": "",
+   "minimum": null,
+   "note": "",
+   "promo": null
+  },
+  {
+   "owner": "Jordan",
+   "name": "Cash Back",
+   "label": "Cash Back",
+   "balance": 2400,
+   "due": "Nov-12",
+   "minimum": 75,
+   "note": "",
+   "promo": null
+  },
+  {
+   "owner": "Jordan",
+   "name": "Gas Card",
+   "label": "Gas Card",
+   "balance": 380,
+   "due": "Nov-20",
+   "minimum": null,
+   "note": "",
+   "promo": null
+  },
+  {
+   "owner": "Jordan",
+   "name": "Electronics Store",
+   "label": "Electronics Store - no intrest 1 year starting Jan '27",
+   "balance": 900,
+   "due": "Nov-3",
+   "minimum": 35,
+   "note": "auto pay on",
+   "promo": {
+    "end": "2028-01-01",
+    "amount": 900,
+    "deferred": true
+   }
+  }
+ ],
+ "savings": [
+  {
+   "account": "ira",
+   "amount": 4200
+  },
+  {
+   "account": "brokerage",
+   "amount": 1800
+  },
+  {
+   "account": "401k",
+   "amount": 11500
+  }
+ ],
+ "cashflow": [
+  {
+   "label": "balance",
+   "amount": 6000
+  },
+  {
+   "label": "expense",
+   "amount": -1400
+  },
+  {
+   "label": "save",
+   "amount": -600
+  },
+  {
+   "label": "rewards card",
+   "amount": -800
+  },
+  {
+   "label": "what's left",
+   "amount": 3200
+  }
+ ],
+ "income": [
+  {
+   "label": "AB",
+   "amount": 5200
+  },
+  {
+   "label": "JD",
+   "amount": 4600
+  }
+ ],
+ "autoCharges": [
+  {
+   "name": "Music",
+   "amount": 11.99
+  },
+  {
+   "name": "Cloud storage",
+   "amount": 2.99
+  },
+  {
+   "name": "Tolls",
+   "amount": 30
+  },
+  {
+   "name": "News - removed",
+   "amount": null
+  }
+ ],
+ "fetchedAt": "2026-11-01T21:30:09.023Z"
+}
