@@ -13,6 +13,53 @@ const span = (m) => {
 const dueText = (s) => String(s || '').replace(/^(\d{1,2})-([A-Za-z]{3})$/, '$2 $1').replace(/^([A-Za-z]{3})-(\d{1,2})$/, '$1 $2');
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+/* ---------- people ---------- */
+// Who's who comes from the PEOPLE secret (names stay out of the repo):
+// [{"name": "...", "aliases": ["SPA"], "color": "blue"}]. Without it, card owners get colors in order.
+const PALETTE = { blue: '--p-blue', pink: '--p-pink', teal: '--p-teal', amber: '--p-amber', purple: '--p-purple' };
+let people = [];
+function setupPeople(b) {
+  const list = b.people?.length ? b.people : [...new Set(b.cards.map((c) => c.owner))].map((name, i) => ({ name, color: ['blue', 'pink', 'teal', 'amber'][i % 4] }));
+  people = list.map((p) => ({ ...p, aliases: [p.name, ...(p.aliases || [])].filter(Boolean).map((a) => a.toLowerCase()) }));
+}
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function personOf(...texts) {
+  for (const t of texts) {
+    if (!t) continue;
+    const s = String(t).toLowerCase();
+    const p = people.find((x) => x.aliases.some((a) => new RegExp(`(^|[^a-z])${escapeRe(a)}([^a-z]|$)`).test(s)));
+    if (p) return p;
+  }
+  return null;
+}
+const personColor = (p) => (p ? (PALETTE[p.color] ? css(PALETTE[p.color]) : p.color) : css('--c-living'));
+const withAlpha = (hex, a) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+function whoTag(p, text) {
+  const s = document.createElement('span');
+  s.className = 'who';
+  s.textContent = text ?? (p ? p.name : 'Shared');
+  if (p) s.style.setProperty('--who', personColor(p));
+  return s;
+}
+function renderPeopleKey() {
+  $('#people').replaceChildren(...people.map((p) => whoTag(p, [p.name, ...(p.aliases || []).filter((a) => a !== p.name.toLowerCase()).map((a) => a.toUpperCase())].join(' · '))));
+}
+// Money text: green when coming in or kept, red when owed or going out.
+function money(elOrId, value, kind, fmt = usd.format) {
+  const e = typeof elOrId === 'string' ? $(elOrId) : elOrId;
+  const zero = Math.abs(value) < 0.5;
+  const out = !zero && (kind === 'out' || (kind === 'auto' && value < 0));
+  e.textContent = `${out ? '−' : ''}${fmt(Math.abs(value))}`;
+  e.classList.toggle('neg', out);
+  e.classList.toggle('pos', !out && !zero);
+  return e;
+}
+
 const DEMO = new URLSearchParams(location.search).has('demo');
 const STORE_KEY = 'home-finance-settings';
 let budget = null;
@@ -88,6 +135,8 @@ function renderIncomes() {
   settings.incomes.forEach((inc, i) => {
     const row = document.createElement('div');
     row.className = 'income';
+    const who = personOf(inc.owner, inc.key, inc.name);
+    if (who) row.style.setProperty('--who', personColor(who));
     const top = Object.assign(document.createElement('div'), { className: 'income-top' });
     const name = Object.assign(document.createElement('input'), { className: 'name', value: inc.name, id: `inc-name-${i}`, title: 'Click to rename' });
     name.setAttribute('aria-label', 'Income name');
@@ -144,15 +193,17 @@ function wireLevers() {
   const bind = (id, key, fmt) => {
     const input = $('#' + id);
     input.value = settings[key];
-    $(`#${id}-out`).textContent = fmt(settings[key]);
-    input.addEventListener('input', () => { settings[key] = +input.value; $(`#${id}-out`).textContent = fmt(settings[key]); schedule(); saveSettings(); });
+    fmt($(`#${id}-out`), settings[key]);
+    input.addEventListener('input', () => { settings[key] = +input.value; fmt($(`#${id}-out`), settings[key]); schedule(); saveSettings(); });
   };
+  const outflow = (e, v) => money(e, v, 'out');
+  const kept = (e, v) => money(e, v, 'in');
   $('#everyday').max = Math.max(6000, Math.ceil(settings.everyday * 2 / 500) * 500);
   $('#savings').max = Math.max(4000, Math.ceil(settings.savings * 2 / 500) * 500);
-  bind('everyday', 'everyday', usd.format);
-  bind('savings', 'savings', usd.format);
-  bind('monthly', 'monthly', usd.format);
-  bind('apr', 'defaultApr', (v) => `${(+v).toFixed(2).replace(/\.?0+$/, '')}%`);
+  bind('everyday', 'everyday', outflow);
+  bind('savings', 'savings', kept);
+  bind('monthly', 'monthly', outflow);
+  bind('apr', 'defaultApr', (e, v) => { e.textContent = `${(+v).toFixed(2).replace(/\.?0+$/, '')}%`; });
   for (const r of document.querySelectorAll('input[name=strategy]')) {
     r.checked = r.value === settings.strategy;
     r.addEventListener('change', () => { settings.strategy = r.value; schedule(); saveSettings(); });
@@ -177,12 +228,12 @@ const baseOptions = (extra = {}) => ({
 });
 const axis = (extra = {}) => ({ grid: { color: css('--line') }, border: { color: css('--line') }, ...extra, ticks: { color: css('--muted'), maxTicksLimit: 6, ...(extra.ticks || {}) } });
 
-function hbars(id, wrapId, labels, values, colors, fmt, tipExtra) {
+function hbars(id, wrapId, labels, values, colors, fmt, tipExtra, dsExtra = {}) {
   const wrap = document.getElementById(wrapId);
   if (wrap) wrap.style.height = `${Math.max(120, labels.length * 30 + 40)}px`;
   chart(id, {
     type: 'bar',
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 22 }] },
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 22, ...dsExtra }] },
     options: baseOptions({
       indexAxis: 'y',
       scales: { x: axis({ beginAtZero: true, ticks: { color: css('--muted'), maxTicksLimit: 6, callback: (v) => (fmt === usd.format || fmt === usd2.format ? usdShort.format(v) : fmt(v)) } }), y: axis({ grid: { display: false }, ticks: { autoSkip: false, maxTicksLimit: 100 } }) },
@@ -207,7 +258,7 @@ function update() {
   slider.max = Math.max(+slider.min + 5000, Math.min(25000, Math.ceil(totalDebt / 6 / 500) * 500));
   if (settings.monthly < +slider.min) settings.monthly = +slider.min;
   slider.value = settings.monthly;
-  $('#monthly-out').textContent = usd.format(settings.monthly);
+  money('#monthly-out', settings.monthly, 'out');
   $('#monthly-hint').textContent = `Minimums add up to ${usd.format(minTotal)}. Everything above that, ${usd.format(Math.max(0, settings.monthly - minTotal))}, is extra.`;
   $('#strategy-hint').textContent = {
     smart: 'Pays enough on each 0% deal to clear it before it ends, then puts the rest on the highest rate. Usually the cheapest.',
@@ -223,32 +274,39 @@ function update() {
   const pay = settings.incomes.map(incomeMonthly);
   settings.incomes.forEach((inc, i) => {
     const net = document.getElementById(`inc-net-${i}`), note = document.getElementById(`inc-note-${i}`);
-    if (net) net.textContent = `${usd.format(pay[i].net)}/mo`;
-    if (note) note.textContent = `${usd.format(pay[i].gross)}/mo before taxes, ${usd.format(pay[i].withheld)} taken out (${(pay[i].rate * 100).toFixed(1)}%).${inc.withhold === 0 && pay[i].gross > 0 ? ' Nothing set aside for taxes.' : ''}`;
+    if (net) money(net, pay[i].net, 'in', (v) => `${usd.format(v)}/mo`);
+    if (note) {
+      note.replaceChildren(`${usd.format(pay[i].gross)}/mo before taxes, `, money(document.createElement('span'), pay[i].withheld, 'out'), ` taken out (${(pay[i].rate * 100).toFixed(1)}%).${inc.withhold === 0 && pay[i].gross > 0 ? ' Nothing set aside for taxes.' : ''}`);
+    }
   });
   const grossTotal = pay.reduce((t, p) => t + p.gross, 0), heldTotal = pay.reduce((t, p) => t + p.withheld, 0);
   const flow = cashFlow({ incomes: pay.map((p) => p.net), livingBills, everyday: settings.everyday, savings: settings.savings, cardPayments: settings.monthly });
-  $('#living-bills').textContent = usd.format(livingBills);
-  $('#income-total').textContent = `${usd.format(flow.income)}/mo`;
+  money('#living-bills', livingBills, 'out');
+  money('#income-total', flow.income, 'in', (v) => `${usd.format(v)}/mo`);
   $('#income-gross').textContent = `${usd.format(grossTotal * 12)} a year before taxes; ${usd.format(heldTotal)} a month taken out for taxes and insurance.`;
 
   // Tiles
   const interestNow = debts.filter((d) => !d.promoEnd || new Date(d.promoEnd) <= start).reduce((t, d) => t + d.balance, 0);
   $('#k-debt').textContent = usd.format(totalDebt);
-  $('#k-debt-note').textContent = `${new Set(debts.map((d) => d.cardId)).size} cards with a balance, ${b.cards.filter((c) => !(c.balance > 0)).length} at $0`;
+  const debtNote = $('#k-debt-note');
+  debtNote.replaceChildren();
+  people.forEach((p, n) => {
+    const owed = debts.filter((d) => personOf(d.owner) === p).reduce((t, d) => t + d.balance, 0);
+    if (n) debtNote.append(' · ');
+    debtNote.append(whoTag(p, `${p.name} ${usd.format(owed)}`));
+  });
   $('#k-interest').textContent = usd.format(interestNow);
-  $('#k-left').textContent = usd.format(flow.left);
-  $('#k-left').parentElement.classList.toggle('tile--bad', flow.left < 0);
+  money('#k-left', flow.left, 'auto');
   $('#k-left-note').textContent = flow.left < 0 ? 'More going out than coming in' : 'After bills, spending, saving and cards';
   $('#k-free').textContent = plan.debtFreeDate ? monthYear(plan.debtFreeDate) : 'Not yet';
   $('#k-free-note').textContent = plan.months != null ? `${span(plan.months)} at ${usd.format(settings.monthly)}/mo` : 'Raise the monthly payment';
 
   // Interest stats
   const monthlyInt = debts.reduce((t, d) => t + (d.promoEnd && new Date(d.promoEnd) > start ? 0 : (d.balance * d.apr) / 12), 0);
-  $('#s-interest').textContent = usd.format(plan.totalInterest);
-  $('#s-saved').textContent = minOnly.months == null ? `${usd.format(minOnly.totalInterest - plan.totalInterest)}+` : usd.format(Math.max(0, minOnly.totalInterest - plan.totalInterest));
+  money('#s-interest', plan.totalInterest, 'out');
+  money('#s-saved', Math.max(0, minOnly.totalInterest - plan.totalInterest), 'in', (v) => `${usd.format(v)}${minOnly.months == null ? '+' : ''}`);
   $('#s-time').textContent = minOnly.months == null ? '50+ yr' : span(Math.max(0, minOnly.months - (plan.months ?? 0)));
-  $('#s-monthly-int').textContent = usd.format(monthlyInt);
+  money('#s-monthly-int', monthlyInt, 'out');
 
   chart('c-interest', {
     type: 'bar',
@@ -322,9 +380,12 @@ function update() {
   hbars('c-payoff', 'payoff-wrap',
     order.map((i, n) => `${n + 1}. ${debts[i].label} · ${debts[i].owner}`),
     order.map((i) => plan.paidOffMonth[i] ?? 600),
-    order.map((i) => (isPromo(debts[i]) ? css('--promo') : css('--bad'))),
+    order.map((i) => (isPromo(debts[i]) ? withAlpha(personColor(personOf(debts[i].owner)), 0.38) : personColor(personOf(debts[i].owner)))),
     (v) => `${v} mo`,
-    (k) => { const i = order[k]; return [plan.paidOffMonth[i] ? `Paid off ${monthYear(addMonths(start, plan.paidOffMonth[i]))}` : 'Not paid off in 50 years', `Balance now ${usd2.format(debts[i].balance)}`, `Interest ${usd.format(plan.interestBy[i])}`]; });
+    (k) => { const i = order[k]; return [isPromo(debts[i]) ? `0% until ${monthYear(new Date(debts[i].promoEnd))}` : 'Charging interest', plan.paidOffMonth[i] ? `Paid off ${monthYear(addMonths(start, plan.paidOffMonth[i]))}` : 'Not paid off in 50 years', `Balance now ${usd2.format(debts[i].balance)}`, `Interest ${usd.format(plan.interestBy[i])}`]; },
+    { borderColor: order.map((i) => personColor(personOf(debts[i].owner))), borderWidth: order.map((i) => (isPromo(debts[i]) ? 1.5 : 0)) });
+  const legend = $('#payoff-legend');
+  legend.replaceChildren(...people.map((p) => whoTag(p)), Object.assign(document.createElement('span'), { textContent: 'Solid bar: charging interest · Light bar: 0% deal' }));
   charts['c-payoff'].options.scales.x.ticks.callback = (v) => `${v} mo`;
   charts['c-payoff'].update('none');
 
@@ -338,8 +399,8 @@ function update() {
     const td = (text, cls) => { const c = document.createElement('td'); if (cls) c.className = cls; if (text != null) c.textContent = text; tr.append(c); return c; };
     td(String(n + 1), 'num');
     td(d.label);
-    td(d.owner);
-    td(usd2.format(d.balance), 'num');
+    td(null).append(whoTag(personOf(d.owner), d.owner));
+    td(usd2.format(d.balance), 'num neg');
     const aprCell = td(null);
     const wrap = Object.assign(document.createElement('span'), { className: 'apr' });
     const input = Object.assign(document.createElement('input'), { type: 'number', min: 0, max: 60, step: 0.01, value: settings.aprs[d.cardId] ?? '', placeholder: String(settings.defaultApr), id: `apr-${n}` });
@@ -358,7 +419,7 @@ function update() {
     status.append(chip);
     td(d.minimum ? `${d.minimumEstimated ? '~' : ''}${usd.format(d.minimum)}` : '—', 'num wide');
     td(plan.paidOffMonth[i] ? monthYear(addMonths(start, plan.paidOffMonth[i])) : 'Not in 50 yr');
-    td(usd.format(plan.interestBy[i]), 'num');
+    td(usd.format(plan.interestBy[i]), plan.interestBy[i] > 0.5 ? 'num neg' : 'num');
     tbody.append(tr);
     if (focused === d.cardId) input.focus();
   });
@@ -367,12 +428,13 @@ function update() {
 function renderStatic() {
   const b = budget;
   const bills = b.bills.filter((x) => x.amount > 0);
-  $('#bills-note').textContent = `${bills.length} bills, ${usd.format(bills.reduce((t, x) => t + x.amount, 0))} in all. Card payments are shown in a darker color and are covered by the card lever.`;
-  hbars('c-bills', 'bills-wrap', bills.map((x) => `${dueText(x.due)} · ${x.payee}`), bills.map((x) => x.amount), bills.map((x) => (x.isCardPayment ? css('--c-cards') : css('--c-living'))), usd.format);
-  $('#savings-note').textContent = `${usd.format(b.savings.reduce((t, x) => t + x.amount, 0))} across ${b.savings.length} accounts.`;
+  $('#bills-note').replaceChildren(`${bills.length} bills, `, money(document.createElement('b'), bills.reduce((t, x) => t + x.amount, 0), 'out'), ' in all. Colored by whose bill it is; gray bills are shared. Card payments are covered by the card lever.');
+  hbars('c-bills', 'bills-wrap', bills.map((x) => `${dueText(x.due)} · ${x.payee}`), bills.map((x) => x.amount), bills.map((x) => personColor(personOf(x.payee))), usd.format,
+    (k) => [personOf(bills[k].payee)?.name || 'Shared', ...(bills[k].isCardPayment ? ['Card payment (covered by the card lever)'] : [])]);
+  $('#savings-note').replaceChildren(money(document.createElement('b'), b.savings.reduce((t, x) => t + x.amount, 0), 'in'), ` across ${b.savings.length} accounts.`);
   hbars('c-savings', 'sav-wrap', b.savings.map((x) => x.account), b.savings.map((x) => x.amount), css('--c-saving'), usd.format);
   const auto = b.autoCharges.filter((x) => x.amount > 0);
-  $('#auto-note').textContent = `${usd2.format(auto.reduce((t, x) => t + x.amount, 0))} a month lands on cards from these.`;
+  $('#auto-note').replaceChildren(money(document.createElement('b'), auto.reduce((t, x) => t + x.amount, 0), 'out', usd2.format), ' a month lands on cards from these.');
   hbars('c-auto', 'auto-wrap', auto.map((x) => x.name), auto.map((x) => x.amount), css('--c-everyday'), usd2.format);
 }
 
@@ -385,6 +447,8 @@ async function start(fresh) {
   $('#error').hidden = true;
   try {
     budget = await loadBudget(fresh);
+    setupPeople(budget);
+    renderPeopleKey();
     if (!settings) {
       settings = await loadSettings(budget);
       renderIncomes();

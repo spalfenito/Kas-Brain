@@ -1,8 +1,10 @@
 /* Layout: one column of summary tiles, then levers beside results, then detail. */
 :root {
   --bg: #f6f7f5; --panel: #ffffff; --fg: #1d2420; --muted: #5f6a64; --line: #dde2de;
-  --accent: #2f6f5e; --accent-soft: #e3efea; --bad: #b4372f; --warn: #a86a12; --good: #2f7a4a; --promo: #3d6ea8;
-  --c-living: #8a9a91; --c-everyday: #c2a25c; --c-saving: #2f7a4a; --c-cards: #b4372f; --c-left: #3d6ea8; --c-min: #9aa39e;
+  --accent: #2f6f5e; --accent-soft: #e3efea; --bad: #b4372f; --warn: #a86a12; --good: #2f7a4a; --promo: #6b7570;
+  --c-living: #8a9a91; --c-everyday: #c2a25c; --c-saving: #3f8f8a; --c-cards: #6f6a8f; --c-left: #2f7a4a; --c-min: #9aa39e;
+  /* People: SPA blue, MAA pink (assigned through the PEOPLE secret). */
+  --p-blue: #2d6cc0; --p-pink: #c8407f; --p-teal: #1f8a8a; --p-amber: #b7791f; --p-purple: #7a52c7;
   --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   --r: 10px; color-scheme: light;
@@ -10,8 +12,9 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #121614; --panel: #1a201d; --fg: #e6ebe8; --muted: #9aa6a0; --line: #2c3430;
-    --accent: #6dbfa5; --accent-soft: #1f2e29; --bad: #ef7a70; --warn: #e2a84a; --good: #6cc78e; --promo: #7ea9e0;
-    --c-living: #7d8c84; --c-everyday: #cfb06a; --c-saving: #6cc78e; --c-cards: #ef7a70; --c-left: #7ea9e0; --c-min: #66706b;
+    --accent: #6dbfa5; --accent-soft: #1f2e29; --bad: #ef7a70; --warn: #e2a84a; --good: #6cc78e; --promo: #9aa6a0;
+    --c-living: #7d8c84; --c-everyday: #cfb06a; --c-saving: #63b8b2; --c-cards: #9d97c4; --c-left: #6cc78e; --c-min: #66706b;
+    --p-blue: #74a9f0; --p-pink: #f28dbd; --p-teal: #5cc4c4; --p-amber: #e2b05c; --p-purple: #b298ee;
     color-scheme: dark;
   }
 }
@@ -109,3 +112,18 @@ tr.first td { background: var(--accent-soft); }
 .foot { font-size: .8rem; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .income .pct[hidden] { display: none; }
+
+/* Money: coming in or kept is green, owed or going out is red. */
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+.lever output.neg, .fixed-row .neg, .lever--main output.neg { color: var(--bad); }
+.lever output.pos { color: var(--good); }
+
+/* People */
+.who { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--who, var(--fg)); white-space: nowrap; }
+.who::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--who, var(--muted)); }
+.people { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; margin-top: 6px; }
+.income { border-left: 3px solid var(--who, var(--line)); padding-left: 10px; }
+.income .name { color: var(--who, var(--fg)); }
+.sw--light { opacity: .4; outline: 1px solid currentColor; }
+.tile-note .who { font-weight: 600; }

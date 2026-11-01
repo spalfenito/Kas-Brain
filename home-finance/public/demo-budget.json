@@ -32,7 +32,7 @@
   },
   {
    "due": "10-Nov",
-   "payee": "Car payment",
+   "payee": "Alex car",
    "amount": 450,
    "isCardPayment": false
   },
@@ -68,7 +68,7 @@
   },
   {
    "due": "5-Dec",
-   "payee": "Gym",
+   "payee": "Jordan gym",
    "amount": 60,
    "isCardPayment": false
   }
@@ -233,6 +233,22 @@
    "amount": 88000,
    "period": "year",
    "withhold": "standard"
+  }
+ ],
+ "people": [
+  {
+   "name": "Alex",
+   "aliases": [
+    "AB"
+   ],
+   "color": "blue"
+  },
+  {
+   "name": "Jordan",
+   "aliases": [
+    "JD"
+   ],
+   "color": "pink"
   }
  ]
 }

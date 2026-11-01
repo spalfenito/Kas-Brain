@@ -71,6 +71,24 @@ Paste a JSON list like this when asked (example numbers):
 - Without this secret, the page uses the paycheck amounts under `incoming` on the sheet.
 - When you change the secret, the new values replace any slider changes made earlier.
 
+### People and colors
+
+Each person gets a color across the page: their cards, incomes, and bills whose name includes their name or initials. Set it as a secret, so names stay out of the repo:
+
+```bash
+npx wrangler secret put PEOPLE
+```
+
+```json
+[{"name": "Alex", "aliases": ["AB"], "color": "blue"}, {"name": "Jordan", "aliases": ["JD"], "color": "pink"}]
+```
+
+- Colors can be `blue`, `pink`, `teal`, `amber`, `purple`, or a hex code like `#2d6cc0`.
+- `aliases` are other names to match, like initials on the sheet. An income can also name its person with `"owner"` in `INCOME_SOURCES`.
+- Without this secret, card owners get colors in the order they appear on the sheet.
+
+Money coming in or kept shows in green; money owed or going out shows in red.
+
 ### 3. Lock it down (do this before using it with real data)
 
 This site shows real balances, so put it behind **Cloudflare Access**. It's free for up to 50 people.
@@ -102,6 +120,7 @@ Create `.dev.vars` (it's git-ignored):
 SHEET_ID=...
 GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 INCOME_SOURCES=[{"key":"salary-1","name":"...","amount":95000,"period":"year","withhold":24}]
+PEOPLE=[{"name":"...","aliases":["AB"],"color":"blue"}]
 ```
 
 Then run `npm run dev`. Run `npm test` for the parser and payoff-math tests.

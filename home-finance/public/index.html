@@ -18,6 +18,7 @@
     <div>
       <h1>Home Finance</h1>
       <p class="muted" id="status">Loading the budget sheet…</p>
+      <div class="people" id="people" aria-label="Color key"></div>
     </div>
     <button type="button" id="refresh" class="btn">Refresh from sheet</button>
   </header>
@@ -25,7 +26,7 @@
   <div id="error" class="alert alert--bad" hidden></div>
 
   <section class="tiles" aria-label="Summary">
-    <div class="tile"><span class="tile-label">Total card debt</span><span class="tile-value" id="k-debt">—</span><span class="tile-note" id="k-debt-note"></span></div>
+    <div class="tile"><span class="tile-label">Total card debt</span><span class="tile-value neg" id="k-debt">—</span><span class="tile-note" id="k-debt-note"></span></div>
     <div class="tile tile--bad"><span class="tile-label">Charging interest now</span><span class="tile-value" id="k-interest">—</span><span class="tile-note">Pay this down first</span></div>
     <div class="tile"><span class="tile-label">Left over each month</span><span class="tile-value" id="k-left">—</span><span class="tile-note" id="k-left-note">With the levers below</span></div>
     <div class="tile tile--good"><span class="tile-label">Debt-free</span><span class="tile-value" id="k-free">—</span><span class="tile-note" id="k-free-note"></span></div>
@@ -93,7 +94,7 @@
       <section class="panel">
         <h2>Interest</h2>
         <div class="stats">
-          <div><span class="tile-label">You'll pay</span><b id="s-interest">—</b></div>
+          <div><span class="tile-label">You'll pay</span><b id="s-interest" class="neg">—</b></div>
           <div><span class="tile-label">Saved vs. minimums only</span><b id="s-saved" class="good">—</b></div>
           <div><span class="tile-label">Time saved</span><b id="s-time" class="good">—</b></div>
           <div><span class="tile-label">Interest per month now</span><b id="s-monthly-int" class="bad">—</b></div>
@@ -120,7 +121,7 @@
     <h2>Payoff plan</h2>
     <p class="muted">Each card in the order your plan pays it off. Type in each card's real interest rate (APR) for exact numbers. "~" marks a minimum the sheet doesn't list, which is estimated.</p>
     <div class="chart" id="payoff-wrap"><canvas id="c-payoff" aria-label="Months until each card is paid off"></canvas></div>
-    <div class="legend"><span><i class="sw sw--bad"></i>Charging interest</span><span><i class="sw sw--promo"></i>0% deal</span></div>
+    <div class="legend" id="payoff-legend"></div>
     <div class="tablewrap">
       <table id="plan-table">
         <thead><tr>

@@ -19,6 +19,7 @@ SHEET_TAB = "the budget"
 # Secrets (never commit these; set with `npx wrangler secret put NAME`):
 #   SHEET_ID                     - the long id in the Google Sheet's URL
 #   INCOME_SOURCES               - optional JSON list of incomes (see README)
+#   PEOPLE                       - optional JSON list of people and their colors (see README)
 #   GOOGLE_SERVICE_ACCOUNT_JSON  - the service account key file contents
 #   ACCESS_TEAM_DOMAIN           - optional, e.g. yourteam.cloudflareaccess.com
 #   ACCESS_AUD                   - optional, the Access application's AUD tag
