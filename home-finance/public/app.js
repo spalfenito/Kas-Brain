@@ -15,7 +15,7 @@ const css = (name) => getComputedStyle(document.documentElement).getPropertyValu
 
 /* ---------- people ---------- */
 // Who's who comes from the PEOPLE secret (names stay out of the repo):
-// [{"name": "...", "aliases": ["SPA"], "color": "blue"}]. Without it, card owners get colors in order.
+// [{"name": "...", "aliases": ["AB"], "color": "blue"}]. Without it, card owners get colors in order.
 const PALETTE = { blue: '--p-blue', pink: '--p-pink', teal: '--p-teal', amber: '--p-amber', purple: '--p-purple' };
 let people = [];
 function setupPeople(b) {

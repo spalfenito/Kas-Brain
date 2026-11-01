@@ -3,7 +3,7 @@
   --bg: #f6f7f5; --panel: #ffffff; --fg: #1d2420; --muted: #5f6a64; --line: #dde2de;
   --accent: #2f6f5e; --accent-soft: #e3efea; --bad: #b4372f; --warn: #a86a12; --good: #2f7a4a; --promo: #6b7570;
   --c-living: #8a9a91; --c-everyday: #c2a25c; --c-saving: #3f8f8a; --c-cards: #6f6a8f; --c-left: #2f7a4a; --c-min: #9aa39e;
-  /* People: SPA blue, MAA pink (assigned through the PEOPLE secret). */
+  /* People colors, assigned through the PEOPLE secret. */
   --p-blue: #2d6cc0; --p-pink: #c8407f; --p-teal: #1f8a8a; --p-amber: #b7791f; --p-purple: #7a52c7;
   --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
