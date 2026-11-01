@@ -211,5 +211,28 @@
    "amount": null
   }
  ],
- "fetchedAt": "2026-11-01T21:30:09.023Z"
+ "fetchedAt": "2026-11-01T21:30:09.023Z",
+ "incomeSources": [
+  {
+   "key": "alex-salary",
+   "name": "Alex salary",
+   "amount": 95000,
+   "period": "year",
+   "withhold": 24
+  },
+  {
+   "key": "alex-side",
+   "name": "Alex side work",
+   "amount": 1200,
+   "period": "month",
+   "withhold": 0
+  },
+  {
+   "key": "jordan-salary",
+   "name": "Jordan salary",
+   "amount": 88000,
+   "period": "year",
+   "withhold": "standard"
+  }
+ ]
 }

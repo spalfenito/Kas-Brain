@@ -54,11 +54,19 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
 .fixed-row { display: flex; justify-content: space-between; font-size: .9rem; }
 
 .incomes { display: grid; gap: 8px; }
-.income { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 8px; align-items: center; }
-.income input { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; width: 100%; min-width: 0; }
+.income { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.income-top { display: flex; align-items: center; gap: 8px; }
+.income-top .name { flex: 1; }
+.income-net { font-weight: 600; white-space: nowrap; color: var(--good); }
+.income-ctrls { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 6px; }
+.income input, .income select { font: inherit; font-size: .88rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; min-width: 0; }
+.income .pct { display: inline-flex; align-items: center; gap: 4px; }
+.income .hint { margin: 0; }
+.icon-btn { font: inherit; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; padding: 0 4px; }
+.btn--small { justify-self: start; padding: 4px 12px; font-size: .8rem; }
 .income input.name { background: transparent; border-color: transparent; font-weight: 500; padding-left: 0; }
 .income input.name:hover, .income input.name:focus { border-color: var(--line); padding-left: 10px; }
-.income-total { display: flex; justify-content: space-between; font-size: .9rem; border-top: 1px dashed var(--line); padding-top: 6px; }
+.income-total { display: flex; justify-content: space-between; font-size: .95rem; }
 
 .seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--bg); padding: 3px; border-radius: 999px; border: 1px solid var(--line); margin-top: 4px; }
 .seg label { flex: 1; text-align: center; cursor: pointer; }
@@ -100,3 +108,4 @@ tr.first td { background: var(--accent-soft); }
 .stack { display: grid; gap: 20px; }
 .foot { font-size: .8rem; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.income .pct[hidden] { display: none; }

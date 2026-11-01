@@ -1,4 +1,4 @@
-import { buildDebts, simulate, minimumsTotal, cashFlow, cardId, addMonths, startOfMonth } from './finance.js';
+import { buildDebts, simulate, minimumsTotal, cashFlow, cardId, addMonths, startOfMonth, incomeMonthly } from './finance.js';
 
 const $ = (s) => document.querySelector(s);
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -31,11 +31,13 @@ async function loadBudget(fresh) {
 
 function defaultsFor(b) {
   const flow = (re) => Math.abs((b.cashflow.find((x) => re.test(x.label)) || {}).amount || 0);
-  const incomes = b.income.length ? b.income : [{ label: 'Person 1', amount: 0 }, { label: 'Person 2', amount: 0 }];
+  const fromSheet = b.income.length ? b.income : [{ label: 'Person 1', amount: 0 }, { label: 'Person 2', amount: 0 }];
+  const sources = b.incomeSources?.length ? b.incomeSources : fromSheet.map((i) => ({ key: i.label, name: i.label, amount: i.amount, period: 'month', withhold: 0 }));
   const debts = buildDebts(b.cards, { defaultApr: 0.24 });
   const plannedExtra = b.cashflow.filter((x) => /card/i.test(x.label) && x.amount < 0).reduce((t, x) => t - x.amount, 0);
   return {
-    incomes: incomes.map((i) => ({ key: i.label, name: i.label, amount: i.amount })),
+    // sig remembers the starting values, so a changed secret or sheet replaces old saved numbers.
+    incomes: sources.map((i) => ({ ...i, sig: JSON.stringify([i.amount, i.period, i.withhold]) })),
     everyday: flow(/^expense/i) || 1500,
     savings: flow(/^save/i),
     monthly: Math.ceil((minimumsTotal(debts) + plannedExtra) / 25) * 25,
@@ -59,8 +61,8 @@ async function loadSettings(b) {
   const s = { ...base, ...(saved || {}) };
   // Keep income rows in step with the sheet: new rows appear, renamed ones keep their names.
   s.incomes = base.incomes.map((row) => {
-    const old = (saved?.incomes || []).find((x) => x.key === row.key);
-    return old ? { ...row, name: old.name, amount: old.amount } : row;
+    const old = (saved?.incomes || []).find((x) => x.key === row.key && x.sig === row.sig);
+    return old ? { ...row, name: old.name, amount: old.amount, period: old.period, withhold: old.withhold } : row;
   }).concat((saved?.incomes || []).filter((x) => x.custom));
   return s;
 }
@@ -86,19 +88,56 @@ function renderIncomes() {
   settings.incomes.forEach((inc, i) => {
     const row = document.createElement('div');
     row.className = 'income';
+    const top = Object.assign(document.createElement('div'), { className: 'income-top' });
     const name = Object.assign(document.createElement('input'), { className: 'name', value: inc.name, id: `inc-name-${i}`, title: 'Click to rename' });
-    name.setAttribute('aria-label', 'Name');
-    const amt = Object.assign(document.createElement('input'), { type: 'number', min: 0, step: 50, value: inc.amount, id: `inc-amt-${i}`, inputMode: 'decimal' });
-    amt.setAttribute('aria-label', `${inc.name} monthly take-home`);
+    name.setAttribute('aria-label', 'Income name');
+    const net = Object.assign(document.createElement('span'), { className: 'income-net', id: `inc-net-${i}` });
+    top.append(name, net);
+    if (inc.custom) {
+      const del = Object.assign(document.createElement('button'), { type: 'button', className: 'icon-btn', textContent: '×', title: 'Remove this income' });
+      del.setAttribute('aria-label', `Remove ${inc.name}`);
+      del.addEventListener('click', () => { settings.incomes.splice(i, 1); renderIncomes(); update(); saveSettings(); });
+      top.append(del);
+    }
+    const ctrls = Object.assign(document.createElement('div'), { className: 'income-ctrls' });
+    const amt = Object.assign(document.createElement('input'), { type: 'number', min: 0, step: inc.period === 'year' ? 1000 : 50, value: inc.amount, id: `inc-amt-${i}`, inputMode: 'decimal' });
+    amt.setAttribute('aria-label', `${inc.name} pay before taxes`);
+    const per = document.createElement('select');
+    per.id = `inc-per-${i}`;
+    per.setAttribute('aria-label', 'Per');
+    per.append(new Option('a year', 'year'), new Option('a month', 'month'));
+    per.value = inc.period;
+    const mode = document.createElement('select');
+    mode.id = `inc-mode-${i}`;
+    mode.setAttribute('aria-label', 'Taxes taken out');
+    mode.append(new Option('Standard taxes', 'standard'), new Option('Set % taken out', 'custom'));
+    mode.value = inc.withhold === 'standard' ? 'standard' : 'custom';
+    const pctWrap = Object.assign(document.createElement('span'), { className: 'pct' });
+    const pct = Object.assign(document.createElement('input'), { type: 'number', min: 0, max: 100, step: 0.5, value: inc.withhold === 'standard' ? 0 : inc.withhold, id: `inc-pct-${i}` });
+    pct.setAttribute('aria-label', 'Percent taken out');
+    pctWrap.append(pct, '%');
+    pctWrap.hidden = mode.value === 'standard';
+    const changed = () => { update(); saveSettings(); };
     name.addEventListener('input', () => { inc.name = name.value; saveSettings(); });
-    amt.addEventListener('input', () => { inc.amount = Math.max(0, +amt.value || 0); update(); saveSettings(); });
-    row.append(name, amt);
+    amt.addEventListener('input', () => { inc.amount = Math.max(0, +amt.value || 0); changed(); });
+    per.addEventListener('change', () => { inc.period = per.value; changed(); });
+    mode.addEventListener('change', () => { inc.withhold = mode.value === 'standard' ? 'standard' : +pct.value || 0; pctWrap.hidden = mode.value === 'standard'; changed(); });
+    pct.addEventListener('input', () => { inc.withhold = Math.max(0, Math.min(100, +pct.value || 0)); changed(); });
+    ctrls.append(amt, per, mode, pctWrap);
+    const note = Object.assign(document.createElement('p'), { className: 'hint', id: `inc-note-${i}` });
+    row.append(top, ctrls, note);
     box.append(row);
+  });
+  const add = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn--small', textContent: '+ Add income' });
+  add.addEventListener('click', () => {
+    settings.incomes.push({ key: `custom-${Date.now()}`, name: 'New income', amount: 0, period: 'month', withhold: 0, custom: true });
+    renderIncomes(); update(); saveSettings();
   });
   const total = document.createElement('div');
   total.className = 'income-total';
-  total.innerHTML = '<span>Together</span><b id="income-total"></b>';
-  box.append(total);
+  total.innerHTML = '<span>Take-home together</span><b id="income-total"></b>';
+  const gross = Object.assign(document.createElement('p'), { className: 'hint', id: 'income-gross' });
+  box.append(add, total, gross);
 }
 
 function wireLevers() {
@@ -181,9 +220,17 @@ function update() {
 
   // Cash flow
   const livingBills = b.bills.filter((x) => !x.isCardPayment).reduce((t, x) => t + x.amount, 0);
-  const flow = cashFlow({ incomes: settings.incomes.map((x) => x.amount), livingBills, everyday: settings.everyday, savings: settings.savings, cardPayments: settings.monthly });
+  const pay = settings.incomes.map(incomeMonthly);
+  settings.incomes.forEach((inc, i) => {
+    const net = document.getElementById(`inc-net-${i}`), note = document.getElementById(`inc-note-${i}`);
+    if (net) net.textContent = `${usd.format(pay[i].net)}/mo`;
+    if (note) note.textContent = `${usd.format(pay[i].gross)}/mo before taxes, ${usd.format(pay[i].withheld)} taken out (${(pay[i].rate * 100).toFixed(1)}%).${inc.withhold === 0 && pay[i].gross > 0 ? ' Nothing set aside for taxes.' : ''}`;
+  });
+  const grossTotal = pay.reduce((t, p) => t + p.gross, 0), heldTotal = pay.reduce((t, p) => t + p.withheld, 0);
+  const flow = cashFlow({ incomes: pay.map((p) => p.net), livingBills, everyday: settings.everyday, savings: settings.savings, cardPayments: settings.monthly });
   $('#living-bills').textContent = usd.format(livingBills);
-  $('#income-total').textContent = usd.format(flow.income);
+  $('#income-total').textContent = `${usd.format(flow.income)}/mo`;
+  $('#income-gross').textContent = `${usd.format(grossTotal * 12)} a year before taxes; ${usd.format(heldTotal)} a month taken out for taxes and insurance.`;
 
   // Tiles
   const interestNow = debts.filter((d) => !d.promoEnd || new Date(d.promoEnd) <= start).reduce((t, d) => t + d.balance, 0);
@@ -235,7 +282,7 @@ function update() {
   ];
   chart('c-cash', {
     type: 'bar',
-    data: { labels: ['Income'], datasets: parts.map(([label, v, c]) => ({ label, data: [v], backgroundColor: css(c), borderWidth: 0, maxBarThickness: 40 })) },
+    data: { labels: ['Take-home pay'], datasets: parts.map(([label, v, c]) => ({ label, data: [v], backgroundColor: css(c), borderWidth: 0, maxBarThickness: 40 })) },
     options: baseOptions({ indexAxis: 'y',
       scales: { x: axis({ stacked: true, beginAtZero: true, max: Math.max(flow.income, flow.out), ticks: { color: css('--muted'), callback: (v) => usdShort.format(v) } }), y: axis({ stacked: true, display: false }) },
       plugins: { ...baseOptions().plugins, legend: { display: true, position: 'bottom', labels: { color: css('--fg'), boxWidth: 10, boxHeight: 10 } },

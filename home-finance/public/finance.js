@@ -141,3 +141,37 @@ export function cashFlow({ incomes, livingBills, everyday, savings, cardPayments
   const out = livingBills + everyday + savings + cardPayments;
   return { income, out, left: income - out };
 }
+
+/* ---------- income and withholding ---------- */
+
+// 2026 federal withholding for one job when both spouses work (Form W-4, Step 2 checked):
+// half the married standard deduction and the single-width brackets, plus Social Security and Medicare.
+// Assumes no state income tax (Texas) and no pre-tax deductions.
+export const WITHHOLDING_2026 = {
+  deduction: 16100,
+  brackets: [[12400, 0.1], [50400, 0.12], [105700, 0.22], [201775, 0.24], [256225, 0.32], [640600, 0.35], [Infinity, 0.37]],
+  socialSecurity: { rate: 0.062, wageBase: 184500 },
+  medicare: { rate: 0.0145, extraRate: 0.009, extraOver: 200000 },
+};
+
+export function standardWithholding(annualWages, t = WITHHOLDING_2026) {
+  const taxable = Math.max(0, annualWages - t.deduction);
+  let federal = 0, floor = 0;
+  for (const [top, rate] of t.brackets) {
+    if (taxable > floor) federal += (Math.min(taxable, top) - floor) * rate;
+    floor = top;
+  }
+  const socialSecurity = Math.min(annualWages, t.socialSecurity.wageBase) * t.socialSecurity.rate;
+  const medicare = annualWages * t.medicare.rate + Math.max(0, annualWages - t.medicare.extraOver) * t.medicare.extraRate;
+  const total = federal + socialSecurity + medicare;
+  return { federal, socialSecurity, medicare, total, rate: annualWages ? total / annualWages : 0 };
+}
+
+// One income source -> monthly gross, amount withheld, and take-home.
+// withhold is a percent (26) or 'standard'.
+export function incomeMonthly({ amount = 0, period = 'year', withhold = 0 }) {
+  const annual = period === 'month' ? amount * 12 : amount;
+  const rate = withhold === 'standard' ? standardWithholding(annual).rate : Math.min(100, Math.max(0, +withhold || 0)) / 100;
+  const gross = annual / 12;
+  return { gross, withheld: gross * rate, net: gross * (1 - rate), rate };
+}

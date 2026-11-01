@@ -49,6 +49,28 @@ npm run deploy
 
 Or deploy from GitHub: in the Cloudflare dashboard, go to **Workers & Pages → Create → Import a repository**. Pick this repo, set the **root directory** to `home-finance`, and keep the deploy command `npx wrangler deploy`. Then add the two secrets under the Worker's **Settings → Variables and Secrets**.
 
+### Income (salaries stay out of the repo)
+
+Set your income sources as a secret. They become the starting values for the Income levers:
+
+```bash
+npx wrangler secret put INCOME_SOURCES
+```
+
+Paste a JSON list like this when asked (example numbers):
+
+```json
+[
+  {"key": "salary-1", "name": "Alex salary", "amount": 95000, "period": "year", "withhold": 24},
+  {"key": "side-1", "name": "Alex side work", "amount": 1200, "period": "month", "withhold": 0},
+  {"key": "salary-2", "name": "Jordan salary", "amount": 88000, "period": "year", "withhold": "standard"}
+]
+```
+
+- `withhold` is either the percent taken out for taxes and insurance, or `"standard"`. Standard means 2026 federal withholding for a two-income household (Form W-4 Step 2 checked), plus Social Security and Medicare. It assumes no state income tax and no pre-tax deductions.
+- Without this secret, the page uses the paycheck amounts under `incoming` on the sheet.
+- When you change the secret, the new values replace any slider changes made earlier.
+
 ### 3. Lock it down (do this before using it with real data)
 
 This site shows real balances, so put it behind **Cloudflare Access**. It's free for up to 50 people.
@@ -79,6 +101,7 @@ Create `.dev.vars` (it's git-ignored):
 ```
 SHEET_ID=...
 GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+INCOME_SOURCES=[{"key":"salary-1","name":"...","amount":95000,"period":"year","withhold":24}]
 ```
 
 Then run `npm run dev`. Run `npm test` for the parser and payoff-math tests.

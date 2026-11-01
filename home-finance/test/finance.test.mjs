@@ -49,3 +49,18 @@ test('minimums always cover the interest, so minimum-only plans still finish', (
 test('cash flow', () => {
   assert.deepEqual(cashFlow({ incomes: [5000, 4000], livingBills: 3000, everyday: 1500, savings: 500, cardPayments: 2000 }), { income: 9000, out: 7000, left: 2000 });
 });
+
+import { standardWithholding, incomeMonthly } from '../public/finance.js';
+
+test('standard 2026 withholding for a two-earner household', () => {
+  const w = standardWithholding(130000);
+  assert.equal(Math.round(w.federal), 19934); // 1,240 + 4,560 + 12,166 + 1,968
+  assert.equal(Math.round(w.socialSecurity + w.medicare), 9945);
+  assert.equal(Math.round(standardWithholding(250000).medicare), 4075); // 1.45% + 0.9% over $200k
+});
+
+test('income sources', () => {
+  assert.equal(Math.round(incomeMonthly({ amount: 120000, period: 'year', withhold: 25 }).net), 7500);
+  assert.equal(incomeMonthly({ amount: 3000, period: 'month', withhold: 0 }).net, 3000);
+  assert.ok(Math.abs(incomeMonthly({ amount: 130000, withhold: 'standard' }).net - (130000 - 29879) / 12) < 1);
+});
